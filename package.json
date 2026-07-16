@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "seed": "node --env-file-if-exists=.env scripts/seed-content.mjs",
+    "test:rls": "node --env-file-if-exists=.env scripts/test-rls.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

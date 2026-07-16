@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# Variáveis de ambiente (contêm chaves do Supabase) — ver .env.example
+.env
+.env.*
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
