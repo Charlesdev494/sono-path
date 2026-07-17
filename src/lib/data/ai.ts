@@ -10,8 +10,10 @@ import {
   aiDisponivel,
   gerarCasoClinico,
   gerarQuestaoQuiz,
+  reformularQuestaoQuiz,
   revisarTexto,
 } from "../api/ai.functions";
+import type { Alternativa } from "./admin";
 
 export const aiDisponivelQueryOptions = () =>
   queryOptions({
@@ -47,6 +49,20 @@ export function useGerarQuestao() {
     mutationFn: (vars: { regiao: string; nivel: "basico" | "avancado"; tema?: string }) =>
       gerarQuestaoQuiz({ data: vars }),
     onError: () => {},
+  });
+}
+
+export function useReformularQuestao() {
+  return useMutation({
+    mutationFn: (vars: {
+      regiao: string;
+      nivel: "basico" | "avancado";
+      enunciado: string;
+      alternativas: Alternativa[];
+      correta: string;
+      explicacao: string;
+      instrucao?: string;
+    }) => reformularQuestaoQuiz({ data: vars }),
   });
 }
 

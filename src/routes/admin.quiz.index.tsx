@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Loader2, ImageIcon } from "lucide-react";
 
-import { adminQuizListQueryOptions } from "@/lib/data/admin";
+import { adminQuizListQueryOptions, type Alternativa } from "@/lib/data/admin";
+import { BotaoIAQuestao } from "@/components/admin/BotaoIAQuestao";
 
 export const Route = createFileRoute("/admin/quiz/")({
   component: AdminQuizList,
@@ -114,40 +115,59 @@ function AdminQuizList() {
       ) : (
         <div className="flex flex-col gap-1.5">
           {filtradas.map((q) => (
-            <Link key={q.id} to="/admin/quiz/$id" params={{ id: q.id }}>
-              <Card className="flex items-center gap-3 p-3 transition-colors hover:bg-accent">
-                {q.imagem_url ? (
-                  <img
-                    src={q.imagem_url}
-                    alt=""
-                    className="size-11 shrink-0 rounded object-cover"
-                  />
-                ) : (
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
-                    <ImageIcon className="size-4" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{q.enunciado}</p>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <Badge variant="outline" className="text-[10px]">
-                      {q.regiao}
-                    </Badge>
-                    {q.nivel === "avancado" && (
+            <div key={q.id} className="flex items-stretch gap-1.5">
+              <Link to="/admin/quiz/$id" params={{ id: q.id }} className="min-w-0 flex-1">
+                <Card className="flex h-full items-center gap-3 p-3 transition-colors hover:bg-accent">
+                  {q.imagem_url ? (
+                    <img
+                      src={q.imagem_url}
+                      alt=""
+                      className="size-11 shrink-0 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+                      <ImageIcon className="size-4" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{q.enunciado}</p>
+                    <div className="mt-1 flex items-center gap-1.5">
                       <Badge variant="outline" className="text-[10px]">
-                        Avançado
+                        {q.regiao}
                       </Badge>
-                    )}
-                    {q.origem === "ia" && (
-                      <Badge variant="outline" className="text-[10px]">
-                        Gerada por IA
-                      </Badge>
-                    )}
+                      {q.nivel === "avancado" && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Avançado
+                        </Badge>
+                      )}
+                      {q.origem === "ia" && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Gerada por IA
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <StatusBadge status={q.status} />
-              </Card>
-            </Link>
+                  <StatusBadge status={q.status} />
+                </Card>
+              </Link>
+              {/* Fora do Link de propósito: botão dentro de link é HTML inválido
+                  e o clique navegaria em vez de abrir o diálogo. */}
+              <div className="flex items-center">
+                <BotaoIAQuestao
+                  questao={{
+                    id: q.id,
+                    regiao: q.regiao,
+                    nivel: q.nivel,
+                    enunciado: q.enunciado,
+                    alternativas: Array.isArray(q.alternativas)
+                      ? (q.alternativas as Alternativa[])
+                      : [],
+                    correta: q.correta,
+                    explicacao: q.explicacao,
+                  }}
+                />
+              </div>
+            </div>
           ))}
         </div>
       )}

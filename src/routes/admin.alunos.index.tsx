@@ -1,21 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, Flame } from "lucide-react";
+import { Loader2, Search, Flame, ChevronRight } from "lucide-react";
 
 import { alunosQueryOptions } from "@/lib/data/admin";
 import { NIVEIS } from "@/lib/data/progress";
 
-export const Route = createFileRoute("/admin/alunos")({
+export const Route = createFileRoute("/admin/alunos/")({
   component: AdminAlunos,
 });
 
 type Ordem = "pontos" | "recentes" | "acerto" | "nome";
 
 function AdminAlunos() {
+  const navigate = useNavigate();
   const { data: alunos, isLoading } = useQuery(alunosQueryOptions());
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("pontos");
@@ -60,7 +61,7 @@ function AdminAlunos() {
       <header>
         <h1 className="font-display text-xl font-bold">Alunos</h1>
         <p className="text-sm text-muted-foreground">
-          {alunos?.length ?? 0} cadastrados · progresso individual
+          {alunos?.length ?? 0} cadastrados · toque num aluno para ver as métricas dele
         </p>
       </header>
 
@@ -109,11 +110,16 @@ function AdminAlunos() {
                   <Th alinhar="right">Respostas</Th>
                   <Th alinhar="right">Acerto</Th>
                   <Th>Última atividade</Th>
+                  <Th>{""}</Th>
                 </tr>
               </thead>
               <tbody>
                 {lista.map((a) => (
-                  <tr key={a.user_id} className="border-b last:border-0 hover:bg-accent/50">
+                  <tr
+                    key={a.user_id}
+                    onClick={() => navigate({ to: "/admin/alunos/$id", params: { id: a.user_id } })}
+                    className="cursor-pointer border-b last:border-0 hover:bg-accent/50"
+                  >
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-glow text-xs font-bold text-primary-foreground">
@@ -161,6 +167,9 @@ function AdminAlunos() {
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">
                       {formatarQuando(a.ultimo_acesso)}
+                    </td>
+                    <td className="px-2 py-2.5 text-right">
+                      <ChevronRight className="inline size-4 text-muted-foreground" />
                     </td>
                   </tr>
                 ))}

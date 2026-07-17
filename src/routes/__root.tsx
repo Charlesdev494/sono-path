@@ -77,7 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // maximum-scale/user-scalable=no: é um app, não uma página — zoom de
+      // pinça e o duplo-toque que dá zoom não fazem sentido e atrapalham gestos.
+      {
+        name: "viewport",
+        content:
+          "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
+      },
       { name: "theme-color", content: "#1e3a8a" },
       { title: "US360" },
       {

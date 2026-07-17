@@ -138,14 +138,22 @@
     border-color: var(--color-border);
   }
 
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Reforça o viewport: mata o zoom por duplo-toque (o meta user-scalable=no
+       cobre a pinça; isto cobre o duplo-toque no iOS Safari fora do standalone)
+       sem bloquear rolagem. */
+    touch-action: manipulation;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }

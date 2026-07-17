@@ -778,6 +778,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_aluno_atividade: {
+        Args: { p_dias?: number; p_user_id: string }
+        Returns: {
+          acertos: number
+          dia: string
+          erros: number
+        }[]
+      }
+      admin_aluno_regioes: {
+        Args: { p_user_id: string }
+        Returns: {
+          acertos: number
+          regiao: string
+          respostas: number
+          taxa_acerto: number
+        }[]
+      }
+      admin_aluno_resumo: {
+        Args: { p_user_id: string }
+        Returns: {
+          acertos: number
+          casos_concluidos: number
+          cidade: string
+          criado_em: string
+          erros: number
+          especialidade: string
+          nivel: number
+          nome: string
+          pontos: number
+          respostas: number
+          streak: number
+          taxa_acerto: number
+          ultimo_acesso: string
+          user_id: string
+        }[]
+      }
       admin_alunos: {
         Args: never
         Returns: {

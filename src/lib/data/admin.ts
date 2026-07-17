@@ -162,6 +162,43 @@ export const alunosQueryOptions = () =>
     },
   });
 
+// Detalhe de um aluno — a visão geral, porém de uma pessoa só.
+export const alunoResumoQueryOptions = (userId: string) =>
+  queryOptions({
+    queryKey: ["admin", "aluno", userId, "resumo"],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_aluno_resumo", { p_user_id: userId });
+      if (error) throw error;
+      return data[0] ?? null;
+    },
+  });
+
+export const alunoRegioesQueryOptions = (userId: string) =>
+  queryOptions({
+    queryKey: ["admin", "aluno", userId, "regioes"],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_aluno_regioes", { p_user_id: userId });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const alunoAtividadeQueryOptions = (userId: string, dias: number) =>
+  queryOptions({
+    queryKey: ["admin", "aluno", userId, "atividade", dias],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_aluno_atividade", {
+        p_user_id: userId,
+        p_dias: dias,
+      });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 // ---------------------------------------------------------------------------
 // escrita
 // ---------------------------------------------------------------------------

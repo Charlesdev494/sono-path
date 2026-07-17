@@ -67,7 +67,10 @@ function AppLayout() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background pb-20">
+    // pt da safe-area: em PWA instalado o conteúdo vai até o topo, sob a barra
+    // de status. Sem isto, a saudação e o botão Admin ficam colados nela (ou
+    // por baixo, no notch/ilha dinâmica) e difíceis de tocar.
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background pb-20 pt-[env(safe-area-inset-top)]">
       <Outlet />
       <BottomNav />
       {/* O sonner já vinha no projeto, mas nunca tinha sido montado — sem isto

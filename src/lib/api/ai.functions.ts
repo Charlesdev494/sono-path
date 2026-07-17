@@ -151,6 +151,52 @@ aluno pudesse vê-la, a menos que o enunciado funcione sem ela.`,
     return questao;
   });
 
+export const reformularQuestaoQuiz = createServerFn({ method: "POST" })
+  .inputValidator(
+    // Entrada frouxa de propósito: a questão vem do banco, onde 'correta' e as
+    // letras são texto livre (uma questão pode ter até 5 alternativas, A–E). A
+    // SAÍDA (questaoSchema) continua estrita em A–D.
+    z.object({
+      regiao: z.string().min(1),
+      nivel: z.enum(["basico", "avancado"]),
+      enunciado: z.string().min(1),
+      alternativas: z.array(z.object({ letra: z.string(), texto: z.string() })).min(2),
+      correta: z.string(),
+      explicacao: z.string().default(""),
+      // Instrução livre do Charles: "deixe mais difícil", "troque a imagem por
+      // corte transversal", "as alternativas estão fáceis demais". Opcional.
+      instrucao: z.string().max(500).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const alternativasTexto = data.alternativas
+      .map((a) => `${a.letra}) ${a.texto}${a.letra === data.correta ? "  [correta]" : ""}`)
+      .join("\n");
+
+    const questao = await chamarIA({
+      schema: questaoSchema,
+      prompt: `Reescreva/melhore esta questão de múltipla escolha já existente sobre ${data.regiao} (nível ${data.nivel}).
+
+Questão atual:
+Enunciado: ${data.enunciado}
+Alternativas:
+${alternativasTexto}
+Explicação atual: ${data.explicacao || "(sem explicação)"}
+
+${
+  data.instrucao
+    ? `Instrução do professor: ${data.instrucao}`
+    : "Mantenha o mesmo tema e objetivo de aprendizado, mas melhore clareza, precisão terminológica e a qualidade das alternativas erradas (plausíveis, não absurdas)."
+}
+
+Use exatamente 4 alternativas (A a D). Em "imagem_label", descreva o corte de
+ultrassom que deveria acompanhar a questão. Preserve a intenção pedagógica
+original — isto é uma revisão, não uma questão sobre outro assunto.`,
+    });
+
+    return questao;
+  });
+
 export const gerarCasoClinico = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({

@@ -36,7 +36,9 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-card">
+      {/* pt da safe-area para o cabeçalho não ficar sob a barra de status no
+          PWA instalado — era isso que cobria "Administração" no celular. */}
+      <header className="border-b bg-card pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

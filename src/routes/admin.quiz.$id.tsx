@@ -22,6 +22,7 @@ import { ChevronLeft, Plus, Trash2, Check, Loader2, Eye, Copy, Sparkles } from "
 
 import { CampoImagem } from "@/components/admin/CampoImagem";
 import { GerarQuestaoComIA } from "@/components/admin/GerarComIA";
+import { consumirRascunhoIA, type RascunhoIA } from "@/lib/data/ia-rascunho";
 import {
   adminQuizQueryOptions,
   regioesQueryOptions,
@@ -75,6 +76,22 @@ const VAZIO: Form = {
   origem: "manual",
 };
 
+// Sobrepõe um rascunho de IA a um formulário, preservando o resto (região,
+// nível, imagem já anexada). Marca como rascunho de IA — só sai desse estado
+// quando o Charles clicar em Publicar.
+function aplicarRascunho(base: Form, r: RascunhoIA): Form {
+  return {
+    ...base,
+    enunciado: r.enunciado,
+    alternativas: r.alternativas,
+    correta: r.correta,
+    explicacao: r.explicacao,
+    imagem_label: r.imagem_label || base.imagem_label,
+    origem: "ia",
+    status: "rascunho",
+  };
+}
+
 function AdminQuizEditor() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -93,10 +110,16 @@ function AdminQuizEditor() {
   const [erro, setErro] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  // Rascunho vindo do botão "IA" da lista. Consumido uma vez na montagem (a
+  // função limpa a si mesma, então não reaparece ao recarregar). Quando
+  // presente, entra por cima do formulário para o Charles revisar — nada foi
+  // salvo ainda.
+  const [rascunhoIA] = useState<RascunhoIA | null>(() => consumirRascunhoIA(id));
+  const [avisoIA, setAvisoIA] = useState(rascunhoIA !== null);
 
   useEffect(() => {
     if (!existente) return;
-    setForm({
+    const base: Form = {
       slug: existente.slug,
       regiao: existente.regiao,
       nivel: existente.nivel,
@@ -111,8 +134,20 @@ function AdminQuizEditor() {
       explicacao: existente.explicacao,
       status: existente.status,
       origem: existente.origem,
-    });
+    };
+    setForm(rascunhoIA ? aplicarRascunho(base, rascunhoIA) : base);
+    // rascunhoIA é fixo (consumido na montagem); depender só de existente basta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existente]);
+
+  // Questão nova com rascunho de IA: não há "existente" para disparar o efeito
+  // acima, então aplicamos sobre o formulário vazio, uma vez.
+  useEffect(() => {
+    if (!nova || !rascunhoIA) return;
+    setForm((f) => aplicarRascunho(f, rascunhoIA));
+    setSalvo(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nova]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -256,6 +291,20 @@ function AdminQuizEditor() {
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         {/* editor */}
         <div className="flex flex-col gap-4">
+          {avisoIA && (
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground">
+                <b className="text-foreground">Rascunho da IA aplicado.</b> Revise tudo — nada foi
+                salvo. Ajuste o que precisar e clique em Salvar ou Publicar.
+              </p>
+              <button
+                onClick={() => setAvisoIA(false)}
+                className="shrink-0 text-xs text-muted-foreground underline"
+              >
+                ok
+              </button>
+            </div>
+          )}
           {/* Some por completo quando não há chave de IA no servidor. */}
           <GerarQuestaoComIA
             regiao={form.regiao}
