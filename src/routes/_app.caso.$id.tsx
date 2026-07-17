@@ -1,64 +1,88 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CASOS, type CasoClinico } from "@/content/casos";
-import { useProfile } from "@/lib/profile";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, ChevronLeft } from "lucide-react";
+import { Check, X, ChevronLeft, Loader2 } from "lucide-react";
+
+import { casosQueryOptions, type QuizLetra } from "@/lib/data/content";
+import { useMarcarMissao, useRegistrarResposta } from "@/lib/data/progress";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/_app/caso/$id")({
-  head: ({ params }) => {
-    const c = CASOS.find((x) => x.id === params.id);
-    return {
-      meta: [
-        { title: `${c?.titulo ?? "Caso"} · US360` },
-        { name: "description", content: c?.apresentacao?.slice(0, 150) ?? "" },
-      ],
-    };
-  },
+  // O título vinha do conteúdo estático; agora o caso só é conhecido depois da
+  // query, então o head fica genérico e a tela mostra o título real.
+  head: () => ({
+    meta: [{ title: "Caso clínico · US360" }],
+  }),
   component: CasoDetailPage,
-  notFoundComponent: () => (
-    <div className="p-6 text-center text-sm text-muted-foreground">
-      Caso não encontrado.{" "}
-      <Link to="/caso" className="text-primary underline">
-        Voltar
-      </Link>
-    </div>
-  ),
   errorComponent: () => (
-    <div className="p-6 text-center text-sm text-destructive">
-      Erro ao carregar caso.
-    </div>
+    <div className="p-6 text-center text-sm text-destructive">Erro ao carregar caso.</div>
   ),
-  loader: ({ params }) => {
-    const caso = CASOS.find((c) => c.id === params.id);
-    if (!caso) throw notFound();
-    return { caso };
-  },
 });
 
 function CasoDetailPage() {
-  const { caso } = Route.useLoaderData() as { caso: CasoClinico };
-  const { update, addPontos, marcarMissao } = useProfile();
-  const [respostas, setRespostas] = useState<Record<string, "A" | "B" | "C" | "D">>({});
-  const [finalizado, setFinalizado] = useState(false);
+  const { id } = Route.useParams();
+  const queryClient = useQueryClient();
+  const { data: casos, isLoading } = useQuery(casosQueryOptions());
+  const registrar = useRegistrarResposta();
+  const marcarMissao = useMarcarMissao();
 
-  const responder = (qid: string, letra: "A" | "B" | "C" | "D") => {
+  const [respostas, setRespostas] = useState<Record<string, QuizLetra>>({});
+  const [finalizado, setFinalizado] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  // a URL usa o slug legível ("caso-fascite"), não o uuid
+  const caso = casos?.find((c) => c.slug === id);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!caso) {
+    return (
+      <div className="p-6 text-center text-sm text-muted-foreground">
+        Caso não encontrado.{" "}
+        <Link to="/caso" className="text-primary underline">
+          Voltar
+        </Link>
+      </div>
+    );
+  }
+
+  const responder = (qid: string, letra: QuizLetra) => {
     if (finalizado) return;
     setRespostas((r) => ({ ...r, [qid]: letra }));
   };
 
-  const finalizar = () => {
-    const acertos = caso.questoes.filter((q) => respostas[q.id] === q.correta).length;
-    const pontos = 30 + acertos * 15;
-    addPontos(pontos);
-    marcarMissao("caso");
-    update((p) =>
-      p.casosRespondidos.includes(caso.id)
-        ? p
-        : { ...p, casosRespondidos: [...p.casosRespondidos, caso.id] },
-    );
+  const finalizar = async () => {
+    setSalvando(true);
+    try {
+      // Cada resposta é validada individualmente pelo servidor; depois vem o
+      // bônus de conclusão. Em série de propósito: o total precisa ficar certo.
+      for (const q of caso.questoes) {
+        const escolhida = respostas[q.id];
+        if (!escolhida) continue;
+        await registrar.mutateAsync({
+          origem: "caso",
+          questaoId: q.id,
+          resposta: escolhida,
+        });
+      }
+      const supabase = getSupabaseBrowserClient();
+      await supabase.rpc("concluir_caso", { p_caso_id: caso.id });
+      await marcarMissao.mutateAsync("caso");
+      await queryClient.invalidateQueries({ queryKey: ["progress"] });
+    } catch {
+      // A resolução aparece de qualquer forma — o estudo não depende do
+      // registro dos pontos ter dado certo.
+    }
+    setSalvando(false);
     setFinalizado(true);
   };
 
@@ -136,8 +160,7 @@ function CasoDetailPage() {
                   const isCorreta = a.letra === q.correta;
                   const isChosen = escolhida === a.letra;
                   let style = "border bg-background hover:bg-accent";
-                  if (finalizado && isCorreta)
-                    style = "border-success bg-success/15";
+                  if (finalizado && isCorreta) style = "border-success bg-success/15";
                   else if (finalizado && isChosen && !isCorreta)
                     style = "border-destructive bg-destructive/10";
                   else if (isChosen) style = "border-primary bg-primary/10";
@@ -152,9 +175,7 @@ function CasoDetailPage() {
                         {a.letra}
                       </span>
                       <span className="flex-1">{a.texto}</span>
-                      {finalizado && isCorreta && (
-                        <Check className="size-4 text-success" />
-                      )}
+                      {finalizado && isCorreta && <Check className="size-4 text-success" />}
                       {finalizado && isChosen && !isCorreta && (
                         <X className="size-4 text-destructive" />
                       )}
@@ -173,7 +194,8 @@ function CasoDetailPage() {
       </div>
 
       {!finalizado ? (
-        <Button onClick={finalizar} disabled={!todasRespondidas} size="lg">
+        <Button onClick={finalizar} disabled={!todasRespondidas || salvando} size="lg">
+          {salvando && <Loader2 className="mr-2 size-4 animate-spin" />}
           Ver resolução
         </Button>
       ) : (

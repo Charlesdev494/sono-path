@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { calcularNivel, useProfile } from "@/lib/profile";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { useAuth, useProfile } from "@/lib/auth";
+import { calcularNivel, missoesDeHoje, progressQueryOptions } from "@/lib/data/progress";
+import { atlasQueryOptions } from "@/lib/data/content";
+
 export const Route = createFileRoute("/_app/home")({
   head: () => ({
     meta: [
@@ -25,24 +28,26 @@ export const Route = createFileRoute("/_app/home")({
 });
 
 function Home() {
-  const { profile, loaded } = useProfile();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (loaded && !profile) navigate({ to: "/onboarding" });
-  }, [loaded, profile, navigate]);
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { data: progress } = useQuery(progressQueryOptions(user?.id));
+  const { data: atlas } = useQuery(atlasQueryOptions());
 
   if (!profile) return null;
-  const nivel = calcularNivel(profile.pontos);
+
+  const pontos = progress?.pontos ?? 0;
+  const nivel = calcularNivel(pontos);
   const hora = new Date().getHours();
   const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+  const missoes = missoesDeHoje(progress ?? null);
 
-  const missoes = profile.missoesCompletadasHoje.missoes;
   const ms = [
     { id: "quiz", label: "Quiz diário", to: "/quiz", icon: Brain },
     { id: "caso", label: "Caso clínico", to: "/caso", icon: Stethoscope },
     { id: "atlas", label: "Revisão anatômica", to: "/atlas", icon: BookOpen },
   ] as const;
+
+  const totalEstruturas = atlas?.reduce((n, r) => n + r.estruturas.length, 0) ?? 0;
 
   return (
     <div className="flex flex-col gap-5 px-5 pt-8">
@@ -64,13 +69,17 @@ function Home() {
           </div>
           <div className="flex items-center gap-1 rounded-full bg-warm px-3 py-1 text-warm-foreground">
             <Flame className="size-4" />
-            <span className="text-sm font-semibold">{profile.streak}d</span>
+            <span className="text-sm font-semibold">{progress?.streak ?? 0}d</span>
           </div>
         </div>
         <div className="mt-4">
           <div className="mb-1 flex justify-between text-xs opacity-90">
-            <span>{profile.pontos} pts</span>
-            {nivel.proximo && <span>{nivel.faltam} pts para {nivel.proximo.nome}</span>}
+            <span>{pontos} pts</span>
+            {nivel.proximo && (
+              <span>
+                {nivel.faltam} pts para {nivel.proximo.nome}
+              </span>
+            )}
           </div>
           <Progress
             value={nivel.progresso}
@@ -131,7 +140,10 @@ function Home() {
           </div>
           <div className="flex-1">
             <p className="font-medium">Atlas de Sonoanatomia</p>
-            <p className="text-xs text-muted-foreground">9 regiões · 30+ estruturas</p>
+            <p className="text-xs text-muted-foreground">
+              {/* números vindos do banco, não mais chumbados no texto */}
+              {atlas?.length ?? 0} regiões · {totalEstruturas} estruturas
+            </p>
           </div>
           <ChevronRight className="size-5 text-muted-foreground" />
         </Link>

@@ -1,11 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { QUIZ, type QuizNivel, type QuizLetra } from "@/content/quiz";
-import { useProfile } from "@/lib/profile";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Brain, Sparkles, GraduationCap, Award } from "lucide-react";
+import {
+  Check,
+  X,
+  Brain,
+  Sparkles,
+  GraduationCap,
+  Award,
+  Loader2,
+} from "lucide-react";
+
+import { useAuth } from "@/lib/auth";
+import { quizQueryOptions, type QuizLetra } from "@/lib/data/content";
+import {
+  respostasQueryOptions,
+  useMarcarMissao,
+  useRegistrarResposta,
+} from "@/lib/data/progress";
+
+type QuizNivel = "basico" | "avancado";
 
 export const Route = createFileRoute("/_app/quiz")({
   head: () => ({
@@ -17,10 +34,13 @@ export const Route = createFileRoute("/_app/quiz")({
   component: QuizPage,
 });
 
-
 function QuizPage() {
-  const { profile, loaded, update, addPontos, marcarMissao } = useProfile();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: QUIZ, isLoading, error } = useQuery(quizQueryOptions());
+  const { data: respostas } = useQuery(respostasQueryOptions(user?.id));
+  const registrar = useRegistrarResposta();
+  const marcarMissao = useMarcarMissao();
+
   const [nivel, setNivel] = useState<QuizNivel>("basico");
   const [regiao, setRegiao] = useState<string>("Todas");
   const [chosen, setChosen] = useState<QuizLetra | null>(null);
@@ -28,25 +48,24 @@ function QuizPage() {
   const [round, setRound] = useState(0);
   const [seedBase] = useState(() => Math.floor(Math.random() * 9973));
 
-  useEffect(() => {
-    if (loaded && !profile) navigate({ to: "/onboarding" });
-  }, [loaded, profile, navigate]);
-
-  const hojeIds = profile?.quizzesHoje.ids ?? [];
-
   const regioesDisponiveis = useMemo(() => {
+    if (!QUIZ) return ["Todas"];
     const set = new Set(QUIZ.filter((q) => q.nivel === nivel).map((q) => q.regiao));
     return ["Todas", ...Array.from(set).sort()];
-  }, [nivel]);
+  }, [QUIZ, nivel]);
 
-  // q depende apenas de seedBase + round + nivel + regiao — não muda ao responder
+  // Embaralha as alternativas para evitar viés de letra. Guarda `letraOriginal`
+  // em cada uma: a tela mostra a letra embaralhada, mas o servidor só conhece a
+  // do banco — mandar a embaralhada faria todo acerto virar erro.
   const q = useMemo(() => {
+    if (!QUIZ || QUIZ.length === 0) return null;
     const filtradas = QUIZ.filter(
       (item) => item.nivel === nivel && (regiao === "Todas" || item.regiao === regiao),
     );
     const base = filtradas.length > 0 ? filtradas : QUIZ.filter((i) => i.nivel === nivel);
+    if (base.length === 0) return null;
     const original = base[(seedBase + round) % base.length];
-    // Embaralhamento determinístico das alternativas para evitar viés de letra
+
     const letras: QuizLetra[] = ["A", "B", "C", "D", "E"];
     let seed = 0;
     const key = `${original.id}|${round}|${seedBase}`;
@@ -63,38 +82,56 @@ function QuizPage() {
     const novasAlts = indices.map((origIdx, newIdx) => ({
       letra: letras[newIdx],
       texto: original.alternativas[origIdx].texto,
-      _origLetra: original.alternativas[origIdx].letra,
+      letraOriginal: original.alternativas[origIdx].letra,
     }));
     const novaCorreta =
-      novasAlts.find((a) => a._origLetra === original.correta)?.letra ?? original.correta;
-    return {
-      ...original,
-      alternativas: novasAlts.map(({ letra, texto }) => ({ letra, texto })),
-      correta: novaCorreta,
-    };
-  }, [round, nivel, regiao, seedBase]);
+      novasAlts.find((a) => a.letraOriginal === original.correta)?.letra ?? original.correta;
 
+    return { ...original, alternativas: novasAlts, correta: novaCorreta };
+  }, [QUIZ, round, nivel, regiao, seedBase]);
 
-  if (!profile) return null;
+  const respondidasHoje = respostas?.filter((r) => r.quiz_question_id).length ?? 0;
 
-  const pontosAcerto = nivel === "avancado" ? 30 : 20;
-  const pontosErro = nivel === "avancado" ? 10 : 5;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-  const responder = (letra: QuizLetra) => {
-    if (revealed) return;
+  if (error || !q) {
+    return (
+      <div className="px-5 pt-8">
+        <p className="text-sm text-muted-foreground">
+          {error
+            ? "Não foi possível carregar o quiz. Verifique sua conexão."
+            : "Nenhuma questão disponível neste filtro."}
+        </p>
+      </div>
+    );
+  }
+
+  const responder = async (letra: QuizLetra) => {
+    if (revealed || registrar.isPending) return;
     setChosen(letra);
     setRevealed(true);
-    const acertou = letra === q.correta;
-    update((p) => ({
-      ...p,
-      quizzesRespondidos: [...p.quizzesRespondidos, q.id],
-      quizzesHoje: {
-        dateISO: new Date().toISOString().slice(0, 10),
-        ids: [...p.quizzesHoje.ids, q.id],
-      },
-    }));
-    addPontos(acertou ? pontosAcerto : pontosErro);
-    marcarMissao("quiz");
+
+    const alt = q.alternativas.find((a) => a.letra === letra);
+    if (!alt) return;
+
+    try {
+      // vai a letra original — a que o banco conhece
+      await registrar.mutateAsync({
+        origem: "quiz",
+        questaoId: q.id,
+        resposta: alt.letraOriginal,
+      });
+      await marcarMissao.mutateAsync("quiz");
+    } catch {
+      // A resposta já está na tela; se o registro falhar, o feedback continua
+      // válido e a pontuação é recuperada quando a conexão voltar.
+    }
   };
 
   const proximo = () => {
@@ -120,6 +157,8 @@ function QuizPage() {
     setRound((x) => x + 1);
   };
 
+  const acertou = chosen === q.correta;
+  const pontosGanhos = registrar.data?.pontos_ganhos;
 
   return (
     <div className="flex flex-col gap-4 px-5 pb-8 pt-8">
@@ -127,7 +166,7 @@ function QuizPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">Quiz Diário</h1>
           <p className="text-sm text-muted-foreground">
-            Respondidos hoje: {hojeIds.length}
+            Respondidas: {respondidasHoje} de {QUIZ?.length ?? 0}
           </p>
         </div>
         <div className="rounded-full bg-warm/20 p-2.5 text-warm">
@@ -180,12 +219,14 @@ function QuizPage() {
         </div>
       </div>
 
-
-
       <Card className="overflow-hidden p-0">
         {q.imagemUrl && (
           <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 to-slate-700 text-xs uppercase tracking-widest text-white/70">
-            <img src={q.imagemUrl} alt={q.imagemLabel} className="size-full object-contain" />
+            <img
+              src={q.imagemUrl}
+              alt={q.imagemLabel ?? q.enunciado}
+              className="size-full object-contain"
+            />
             <div className="absolute left-3 top-3 rounded bg-black/60 px-2 py-0.5 text-[10px] text-white">
               US · {q.imagemLabel}
             </div>
@@ -200,7 +241,8 @@ function QuizPage() {
           </div>
           {q.caso && (
             <p className="mb-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Caso: </span>{q.caso}
+              <span className="font-semibold text-foreground">Caso: </span>
+              {q.caso}
             </p>
           )}
           <p className="font-medium">{q.enunciado}</p>
@@ -240,9 +282,9 @@ function QuizPage() {
           <div className="mb-1 flex items-center gap-2 text-primary">
             <Sparkles className="size-4" />
             <p className="text-sm font-semibold">
-              {chosen === q.correta
-                ? `+${pontosAcerto} pontos · resposta correta`
-                : `+${pontosErro} pontos · resposta incorreta`}
+              {/* pontos vêm do servidor: é ele quem decide quanto vale */}
+              {pontosGanhos != null ? `+${pontosGanhos} pontos · ` : ""}
+              {acertou ? "resposta correta" : "resposta incorreta"}
             </p>
           </div>
           <p className="text-sm text-foreground/80">{q.explicacao}</p>

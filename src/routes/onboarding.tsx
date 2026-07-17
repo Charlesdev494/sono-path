@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { saveProfile, type Profile } from "@/lib/profile";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { useAuth, useProfile } from "@/lib/auth";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -27,15 +29,34 @@ export const Route = createFileRoute("/onboarding")({
 
 function Onboarding() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, pronto } = useAuth();
+  const { profile } = useProfile();
   const [step, setStep] = useState(0);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  // Começa vazio: os valores anteriores eram dados de teste chumbados
+  // ("Dr. Teste", "Belo Horizonte / MG") que apareciam para todo mundo.
   const [data, setData] = useState({
-    nome: "Dr. Teste",
-    especialidade: "Medicina da Dor",
-    cidade: "Belo Horizonte / MG",
-    tempoFormado: "6 a 10",
-    temUS: true,
-    trabalhaDor: true,
+    nome: "",
+    especialidade: "",
+    cidade: "",
+    tempoFormado: "",
+    temUS: false,
+    trabalhaDor: false,
   });
+
+  useEffect(() => {
+    if (pronto && !user) navigate({ to: "/login" });
+  }, [pronto, user, navigate]);
+
+  // Quem entrou com Google/Apple já tem nome; não pedir de novo.
+  useEffect(() => {
+    if (profile?.nome && !data.nome) {
+      setData((d) => ({ ...d, nome: profile.nome }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.nome]);
 
   const total = 5;
   const set = (k: keyof typeof data, v: string | boolean) =>
@@ -44,23 +65,32 @@ function Onboarding() {
   const next = () => setStep((s) => Math.min(total, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
-  const concluir = () => {
-    const profile: Profile = {
-      ...data,
-      pontos: 0,
-      streak: 1,
-      ultimoAcessoISO: new Date().toISOString(),
-      quizzesRespondidos: [],
-      quizzesHoje: { dateISO: new Date().toISOString().slice(0, 10), ids: [] },
-      casosRespondidos: [],
-      atlasVisitados: [],
-      missoesCompletadasHoje: {
-        dateISO: new Date().toISOString().slice(0, 10),
-        missoes: [],
-      },
-      createdAtISO: new Date().toISOString(),
-    };
-    saveProfile(profile);
+  const concluir = async () => {
+    if (!user) return;
+    setSalvando(true);
+    setErro(null);
+
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        nome: data.nome.trim(),
+        especialidade: data.especialidade,
+        cidade: data.cidade.trim(),
+        tempo_formado: data.tempoFormado,
+        tem_us: data.temUS,
+        trabalha_dor: data.trabalhaDor,
+        onboarding_completo: true,
+      })
+      .eq("id", user.id);
+
+    setSalvando(false);
+    if (error) {
+      setErro("Não foi possível salvar seu perfil. Verifique sua conexão e tente de novo.");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["profile"] });
     navigate({ to: "/home" });
   };
 
@@ -221,6 +251,12 @@ function Onboarding() {
         )}
       </div>
 
+      {erro && (
+        <p role="alert" className="mt-4 text-sm text-destructive">
+          {erro}
+        </p>
+      )}
+
       <div className="mt-6 flex gap-3">
         {step > 0 && (
           <Button variant="outline" onClick={back} className="flex-1">
@@ -234,7 +270,8 @@ function Onboarding() {
             <ChevronRight className="ml-1 size-4" />
           </Button>
         ) : (
-          <Button onClick={concluir} className="flex-1">
+          <Button onClick={concluir} disabled={salvando} className="flex-1">
+            {salvando && <Loader2 className="mr-2 size-4 animate-spin" />}
             Começar
           </Button>
         )}

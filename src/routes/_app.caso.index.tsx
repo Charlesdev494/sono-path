@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CASOS, casoDaSemana } from "@/content/casos";
-import { useProfile } from "@/lib/profile";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, ChevronRight, Check, Sparkles } from "lucide-react";
+import { Stethoscope, ChevronRight, Check, Sparkles, Loader2 } from "lucide-react";
+
+import { useAuth } from "@/lib/auth";
+import { casosQueryOptions } from "@/lib/data/content";
+import { progressQueryOptions } from "@/lib/data/progress";
 
 export const Route = createFileRoute("/_app/caso/")({
   head: () => ({
@@ -16,9 +19,38 @@ export const Route = createFileRoute("/_app/caso/")({
 });
 
 function CasoListPage() {
-  const { profile } = useProfile();
-  const destaque = casoDaSemana();
-  const respondidos = profile?.casosRespondidos ?? [];
+  const { user } = useAuth();
+  const { data: casos, isLoading } = useQuery(casosQueryOptions());
+  const { data: progress } = useQuery(progressQueryOptions(user?.id));
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!casos || casos.length === 0) {
+    return (
+      <div className="px-5 pt-8">
+        <p className="text-sm text-muted-foreground">
+          Nenhum caso publicado ainda.
+        </p>
+      </div>
+    );
+  }
+
+  // Mesma regra de antes: gira o destaque a cada semana. Vive aqui porque a
+  // função morava no arquivo de conteúdo, que deixou de existir.
+  const destaque =
+    casos[Math.floor((Date.now() / (1000 * 60 * 60 * 24 * 7)) % casos.length)];
+
+  const feitos = new Set(
+    (progress?.atlas_visitados ?? [])
+      .filter((v) => v.startsWith("caso:"))
+      .map((v) => v.slice("caso:".length)),
+  );
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-8 pt-8">
@@ -34,11 +66,7 @@ function CasoListPage() {
         </div>
       </header>
 
-      <Link
-        to="/caso/$id"
-        params={{ id: destaque.id }}
-        className="block"
-      >
+      <Link to="/caso/$id" params={{ id: destaque.slug }} className="block">
         <Card className="overflow-hidden border-primary/30 bg-primary/5 p-0">
           {destaque.imagemUrl && (
             <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-slate-900">
@@ -69,12 +97,12 @@ function CasoListPage() {
 
       <div className="space-y-2">
         <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Todos os casos ({CASOS.length})
+          Todos os casos ({casos.length})
         </h2>
-        {CASOS.map((c) => {
-          const feito = respondidos.includes(c.id);
+        {casos.map((c) => {
+          const feito = feitos.has(c.id);
           return (
-            <Link key={c.id} to="/caso/$id" params={{ id: c.id }}>
+            <Link key={c.id} to="/caso/$id" params={{ id: c.slug }}>
               <Card className="flex items-center gap-3 p-3 transition-colors hover:bg-accent">
                 {c.imagemUrl ? (
                   <img

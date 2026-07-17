@@ -1,12 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ATLAS } from "@/content/atlas";
-import { ChevronRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+
+import { atlasQueryOptions } from "@/lib/data/content";
 
 export const Route = createFileRoute("/_app/atlas/")({
   component: AtlasIndex,
 });
 
 function AtlasIndex() {
+  const { data: atlas, isLoading } = useQuery(atlasQueryOptions());
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 px-5 pt-8">
       <header>
@@ -16,7 +28,7 @@ function AtlasIndex() {
         </p>
       </header>
       <ul className="grid grid-cols-2 gap-3">
-        {ATLAS.map((r) => (
+        {atlas?.map((r) => (
           <li key={r.slug}>
             <Link
               to="/atlas/$region"
@@ -32,10 +44,6 @@ function AtlasIndex() {
           </li>
         ))}
       </ul>
-      <div className="mt-2 rounded-xl bg-muted/60 p-4 text-xs text-muted-foreground">
-        <ChevronRight className="mr-1 inline size-3" />
-        Conteúdo placeholder — será substituído por imagens e vídeos reais.
-      </div>
     </div>
   );
 }

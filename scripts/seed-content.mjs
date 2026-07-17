@@ -137,7 +137,11 @@ async function migrarImagem(urlOriginal) {
     body: bytes,
   });
   if (!up.ok) {
-    return { urlOriginal, urlPublica: null, status: `upload HTTP ${up.status}: ${await up.text()}` };
+    return {
+      urlOriginal,
+      urlPublica: null,
+      status: `upload HTTP ${up.status}: ${await up.text()}`,
+    };
   }
   return { urlOriginal, urlPublica, status: "ok", bytes: bytes.length };
 }
@@ -151,8 +155,12 @@ console.log("=".repeat(52));
 const { QUIZ, CASOS, ATLAS } = await loadContent();
 console.log(`Conteúdo lido do código:`);
 console.log(`  ${QUIZ.length} questões de quiz`);
-console.log(`  ${CASOS.length} casos clínicos (${CASOS.reduce((n, c) => n + c.questoes.length, 0)} questões)`);
-console.log(`  ${ATLAS.length} regiões do atlas (${ATLAS.reduce((n, r) => n + r.estruturas.length, 0)} estruturas)`);
+console.log(
+  `  ${CASOS.length} casos clínicos (${CASOS.reduce((n, c) => n + c.questoes.length, 0)} questões)`,
+);
+console.log(
+  `  ${ATLAS.length} regiões do atlas (${ATLAS.reduce((n, r) => n + r.estruturas.length, 0)} estruturas)`,
+);
 
 const urls = [...coletarUrls({ QUIZ, CASOS, ATLAS })];
 console.log(`\nMigrando ${urls.length} imagens para o Storage...`);
@@ -166,7 +174,9 @@ console.log(`  ${ok.length}/${urls.length} enviadas (${(totalBytes / 1024 / 1024
 if (falhas.length) {
   console.error(`\n  ${falhas.length} imagens FALHARAM:`);
   falhas.slice(0, 10).forEach((f) => console.error(`    ${f.urlOriginal} → ${f.status}`));
-  console.error("\n  Abortado: subir conteúdo apontando para imagem quebrada é pior que não subir.");
+  console.error(
+    "\n  Abortado: subir conteúdo apontando para imagem quebrada é pior que não subir.",
+  );
   process.exit(1);
 }
 
@@ -288,4 +298,6 @@ console.log(`  ${estruturasIn.length} estruturas`);
 
 console.log("\n" + "=".repeat(52));
 console.log("Seed concluído.");
-console.log(`  ${quizIn.length} quiz · ${casosIn.length} casos (${questoesIn.length} questões) · ${regioesIn.length} regiões (${estruturasIn.length} estruturas) · ${ok.length} imagens`);
+console.log(
+  `  ${quizIn.length} quiz · ${casosIn.length} casos (${questoesIn.length} questões) · ${regioesIn.length} regiões (${estruturasIn.length} estruturas) · ${ok.length} imagens`,
+);
