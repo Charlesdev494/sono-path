@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { InstalarApp } from "@/components/InstalarApp";
+import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { useAuth, useProfile } from "@/lib/auth";
 import { calcularNivel, missoesDeHoje, progressQueryOptions } from "@/lib/data/progress";
 import { atlasQueryOptions } from "@/lib/data/content";
@@ -73,6 +74,9 @@ function Home() {
 
       {/* Só aparece se der para instalar e a pessoa ainda não instalou. */}
       <InstalarApp />
+      {/* Só aparece se o push estiver ligado no servidor e a pessoa ainda não
+          decidiu. */}
+      <AtivarNotificacoes />
 
       {/* Stats card */}
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary to-primary-glow p-5 text-primary-foreground">

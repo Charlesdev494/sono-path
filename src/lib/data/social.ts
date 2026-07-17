@@ -169,6 +169,26 @@ export async function verificarConquistas() {
   }
 }
 
+export type PrefNotif = "notif_lembrete" | "notif_conquista" | "notif_nivel" | "notif_ranking";
+
+export function usePreferenciaNotif() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { userId: string; campo: PrefNotif; valor: boolean }) => {
+      const supabase = getSupabaseBrowserClient();
+      // O tipo gerado do update não aceita chave dinâmica; o cast é restrito às
+      // quatro colunas de notificação (PrefNotif), então não abre brecha para
+      // gravar qualquer campo.
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [vars.campo]: vars.valor } as Partial<Record<PrefNotif, boolean>>)
+        .eq("id", vars.userId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }),
+  });
+}
+
 export function usePrivacidadeRanking() {
   const qc = useQueryClient();
   return useMutation({

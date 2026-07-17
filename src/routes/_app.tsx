@@ -35,6 +35,29 @@ function AppLayout() {
     if (user) touchStreak().catch(() => {});
   }, [user]);
 
+  // O navegador pode trocar o endereço de push sozinho; o service worker
+  // avisa por postMessage e nós atualizamos o servidor. Sem isto, a pessoa
+  // simplesmente para de receber notificações e ninguém sabe por quê.
+  useEffect(() => {
+    if (!user || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const aoMensagem = (e: MessageEvent) => {
+      if (e.data?.tipo === "push:reinscrito" && e.data.nova) {
+        import("@/lib/api/push.functions").then(({ inscreverPush }) => {
+          const nova = e.data.nova;
+          inscreverPush({
+            data: {
+              endpoint: nova.endpoint,
+              keys: { p256dh: nova.keys.p256dh, auth: nova.keys.auth },
+              userAgent: navigator.userAgent,
+            },
+          }).catch(() => {});
+        });
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", aoMensagem);
+    return () => navigator.serviceWorker.removeEventListener("message", aoMensagem);
+  }, [user]);
+
   if (!pronto || carregando || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">

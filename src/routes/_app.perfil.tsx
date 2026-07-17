@@ -33,6 +33,7 @@ import {
   respostasQueryOptions,
 } from "@/lib/data/progress";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PreferenciasNotif } from "@/components/PreferenciasNotif";
 
 export const Route = createFileRoute("/_app/perfil")({
   head: () => ({
@@ -198,6 +199,9 @@ function PerfilPage() {
           })}
         </ul>
       </Card>
+
+      {/* Some por completo se o push não estiver ligado no servidor. */}
+      <PreferenciasNotif profile={profile} />
 
       <Card className="p-4">
         <h2 className="mb-3 font-display font-semibold">Privacidade</h2>

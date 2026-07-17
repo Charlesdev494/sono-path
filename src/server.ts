@@ -37,8 +37,46 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
+// Endpoint do cron de notificações. Vive aqui, antes de delegar ao TanStack,
+// porque é uma rota HTTP simples que precisa funcionar em qualquer alvo de
+// deploy (Cloudflare hoje, Vercel amanhã) — e esta versão do Start não tem
+// rotas de servidor baseadas em arquivo.
+//
+// Protegido por segredo no header: um agendador externo (Vercel Cron, GitHub
+// Action, pg_cron) chama isto de tempos em tempos. Sem o segredo certo, 401.
+async function tratarCron(request: Request): Promise<Response> {
+  const { default: process } = await import("node:process");
+  const segredoEsperado = process.env.CRON_SECRET;
+
+  // Sem segredo configurado, o endpoint fica trancado — não é uma porta aberta
+  // por padrão.
+  if (!segredoEsperado) {
+    return Response.json({ erro: "cron não configurado" }, { status: 503 });
+  }
+  const enviado =
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+    request.headers.get("x-cron-secret");
+  if (enviado !== segredoEsperado) {
+    return Response.json({ erro: "não autorizado" }, { status: 401 });
+  }
+
+  const { rodarCronNotificacoes } = await import("./lib/push/cron.server");
+  try {
+    const resumo = await rodarCronNotificacoes();
+    return Response.json({ ok: true, ...resumo });
+  } catch (error) {
+    console.error("[cron] falhou:", error);
+    return Response.json({ erro: "falha ao processar" }, { status: 500 });
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/cron/notificacoes") {
+      return tratarCron(request);
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

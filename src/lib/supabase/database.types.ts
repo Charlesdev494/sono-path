@@ -349,6 +349,50 @@ export type Database = {
           },
         ]
       }
+      notifications_log: {
+        Row: {
+          chave: string | null
+          corpo: string
+          entregue: boolean
+          enviado_em: string
+          erro: string | null
+          id: number
+          tipo: Database["public"]["Enums"]["notif_tipo"]
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          chave?: string | null
+          corpo: string
+          entregue?: boolean
+          enviado_em?: string
+          erro?: string | null
+          id?: number
+          tipo: Database["public"]["Enums"]["notif_tipo"]
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          chave?: string | null
+          corpo?: string
+          entregue?: boolean
+          enviado_em?: string
+          erro?: string | null
+          id?: number
+          tipo?: Database["public"]["Enums"]["notif_tipo"]
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       points_events: {
         Row: {
           created_at: string
@@ -393,6 +437,10 @@ export type Database = {
           especialidade: string
           id: string
           nome: string
+          notif_conquista: boolean
+          notif_lembrete: boolean
+          notif_nivel: boolean
+          notif_ranking: boolean
           onboarding_completo: boolean
           role: Database["public"]["Enums"]["user_role"]
           tem_us: boolean
@@ -408,6 +456,10 @@ export type Database = {
           especialidade?: string
           id: string
           nome?: string
+          notif_conquista?: boolean
+          notif_lembrete?: boolean
+          notif_nivel?: boolean
+          notif_ranking?: boolean
           onboarding_completo?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           tem_us?: boolean
@@ -423,6 +475,10 @@ export type Database = {
           especialidade?: string
           id?: string
           nome?: string
+          notif_conquista?: boolean
+          notif_lembrete?: boolean
+          notif_nivel?: boolean
+          notif_ranking?: boolean
           onboarding_completo?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           tem_us?: boolean
@@ -431,6 +487,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_fila: {
+        Row: {
+          chave: string | null
+          corpo: string
+          criado_em: string
+          id: number
+          processado_em: string | null
+          tipo: Database["public"]["Enums"]["notif_tipo"]
+          titulo: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          chave?: string | null
+          corpo: string
+          criado_em?: string
+          id?: number
+          processado_em?: string | null
+          tipo: Database["public"]["Enums"]["notif_tipo"]
+          titulo: string
+          url?: string
+          user_id: string
+        }
+        Update: {
+          chave?: string | null
+          corpo?: string
+          criado_em?: string
+          id?: number
+          processado_em?: string | null
+          tipo?: Database["public"]["Enums"]["notif_tipo"]
+          titulo?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_fila_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          invalida_em: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          invalida_em?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          invalida_em?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_questions: {
         Row: {
@@ -762,6 +903,34 @@ export type Database = {
         }[]
       }
       nivel_de: { Args: { p_pontos: number }; Returns: number }
+      push_alvos_inatividade: {
+        Args: { p_dias?: number }
+        Returns: {
+          dias_parado: number
+          nome: string
+          streak: number
+          user_id: string
+        }[]
+      }
+      push_alvos_ranking: {
+        Args: never
+        Returns: {
+          nome: string
+          pontos: number
+          posicao: number
+          total: number
+          user_id: string
+        }[]
+      }
+      push_inscricoes_de: {
+        Args: { p_user_id: string }
+        Returns: {
+          auth: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }[]
+      }
       ranking: {
         Args: { p_escopo?: string; p_limite?: number; p_periodo?: string }
         Returns: {
@@ -822,6 +991,12 @@ export type Database = {
       content_origin: "manual" | "ia"
       content_status: "rascunho" | "publicado"
       friendship_status: "pendente" | "aceito" | "recusado"
+      notif_tipo:
+        | "lembrete_inatividade"
+        | "streak_em_risco"
+        | "conquista"
+        | "subiu_nivel"
+        | "ranking_semanal"
       point_reason: "quiz" | "caso_questao" | "caso_bonus" | "atlas"
       quiz_level: "basico" | "avancado"
       user_role: "user" | "admin"
@@ -956,6 +1131,13 @@ export const Constants = {
       content_origin: ["manual", "ia"],
       content_status: ["rascunho", "publicado"],
       friendship_status: ["pendente", "aceito", "recusado"],
+      notif_tipo: [
+        "lembrete_inatividade",
+        "streak_em_risco",
+        "conquista",
+        "subiu_nivel",
+        "ranking_semanal",
+      ],
       point_reason: ["quiz", "caso_questao", "caso_bonus", "atlas"],
       quiz_level: ["basico", "avancado"],
       user_role: ["user", "admin"],

@@ -12,7 +12,7 @@
 
 // Trocar o nome do cache faz o navegador instalar este SW e apagar os caches
 // antigos no activate.
-const CACHE_NAME = "us360-v3";
+const CACHE_NAME = "us360-v4";
 
 // Só o que é público e estável.
 //
@@ -130,5 +130,93 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => cached ?? Response.error());
     }),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Notificações push
+// ---------------------------------------------------------------------------
+
+self.addEventListener("push", (event) => {
+  // O payload vem do nosso servidor, mas nunca confie cegamente: um push
+  // malformado que jogue exceção aqui faz o navegador mostrar uma notificação
+  // genérica ("Este site foi atualizado em segundo plano") no lugar da nossa.
+  let dados = {};
+  try {
+    dados = event.data ? event.data.json() : {};
+  } catch {
+    dados = {};
+  }
+
+  const titulo = dados.titulo || "US360";
+  const opcoes = {
+    body: dados.corpo || "",
+    icon: "/icons/icon-192.png",
+    // Ícone monocromático da barra de status no Android. Sem ele o sistema
+    // mostra um quadrado cinza.
+    badge: "/icons/badge-96.png",
+    lang: "pt-BR",
+    // A tag agrupa: uma notificação nova do mesmo tipo substitui a anterior
+    // em vez de empilhar cinco lembretes iguais.
+    tag: dados.tipo || "us360",
+    renotify: Boolean(dados.tipo),
+    data: { url: dados.url || "/home" },
+    // Sem vibração agressiva: é um app de estudo, não um alarme.
+    vibrate: [80, 40, 80],
+  };
+
+  event.waitUntil(self.registration.showNotification(titulo, opcoes));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const destino = event.notification.data?.url || "/home";
+
+  event.waitUntil(
+    (async () => {
+      const janelas = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      // Se o app já está aberto, navegar a aba existente em vez de abrir uma
+      // segunda — ninguém quer três cópias do app abertas.
+      for (const janela of janelas) {
+        if (new URL(janela.url).origin === self.location.origin) {
+          await janela.focus();
+          if ("navigate" in janela) await janela.navigate(destino);
+          return;
+        }
+      }
+      await self.clients.openWindow(destino);
+    })(),
+  );
+});
+
+// O serviço de push pode trocar o endereço de inscrição sozinho. Sem tratar
+// isso, a pessoa simplesmente para de receber notificações e ninguém descobre
+// por quê. Aqui reinscrevemos e avisamos o app para atualizar o servidor.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      const inscricaoAntiga =
+        event.oldSubscription || (await self.registration.pushManager.getSubscription());
+      const chave = inscricaoAntiga?.options?.applicationServerKey;
+      if (!chave) return;
+
+      const nova = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: chave,
+      });
+
+      const janelas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const janela of janelas) {
+        janela.postMessage({
+          tipo: "push:reinscrito",
+          antiga: inscricaoAntiga?.endpoint ?? null,
+          nova: nova.toJSON(),
+        });
+      }
+    })(),
   );
 });
