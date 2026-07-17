@@ -1,4 +1,8 @@
-const CACHE_NAME = "us360-v1";
+// Trocar o nome do cache faz o navegador instalar este SW e apagar os caches
+// antigos no activate. É a única forma de curar quem ficou com módulos velhos
+// presos do dev — o próprio código de correção não chegaria ao navegador
+// enquanto o SW anterior estivesse servindo do cache.
+const CACHE_NAME = "us360-v2";
 const PRECACHE_ASSETS = [
   "/",
   "/home",
@@ -15,7 +19,7 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -24,11 +28,9 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(
-          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-        )
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
       )
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -41,6 +43,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Nunca tocar nas rotas internas do dev server. Guardar um módulo do Vite em
+  // cache-first congela o código: o arquivo muda e o navegador segue servindo a
+  // versão antiga, quebrando o app de um jeito que não parece cache. Estes
+  // prefixos só existem em desenvolvimento, então ignorá-los não afeta produção.
+  if (
+    url.pathname.startsWith("/@") ||
+    url.pathname.startsWith("/src/") ||
+    url.pathname.startsWith("/node_modules/") ||
+    url.searchParams.has("v") ||
+    url.searchParams.has("t")
+  ) {
+    return;
+  }
+
   // For navigation requests, try network first, fallback to cache
   if (request.mode === "navigate") {
     event.respondWith(
@@ -50,7 +66,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((res) => res || caches.match("/")))
+        .catch(() => caches.match(request).then((res) => res || caches.match("/"))),
     );
     return;
   }
@@ -64,6 +80,6 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         return response;
       });
-    })
+    }),
   );
 });

@@ -97,8 +97,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "piloto do aplicativo de charles ultrassom" },
       { property: "og:description", content: "piloto do aplicativo de charles ultrassom" },
       { name: "twitter:description", content: "piloto do aplicativo de charles ultrassom" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7f32fbab-a556-4568-a8bd-2a684b97f80b/id-preview-6ab8df80--5b359dfd-f0a7-4cb4-9eca-408d15846ddf.lovable.app-1781197888578.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7f32fbab-a556-4568-a8bd-2a684b97f80b/id-preview-6ab8df80--5b359dfd-f0a7-4cb4-9eca-408d15846ddf.lovable.app-1781197888578.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7f32fbab-a556-4568-a8bd-2a684b97f80b/id-preview-6ab8df80--5b359dfd-f0a7-4cb4-9eca-408d15846ddf.lovable.app-1781197888578.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7f32fbab-a556-4568-a8bd-2a684b97f80b/id-preview-6ab8df80--5b359dfd-f0a7-4cb4-9eca-408d15846ddf.lovable.app-1781197888578.png",
+      },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "US360" },
@@ -136,8 +144,32 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function registerServiceWorker() {
+// O service worker usa cache-first para assets (public/sw.js). Em produção é o
+// que faz o app abrir offline. Em desenvolvimento ele intercepta os módulos do
+// Vite, guarda a primeira versão e passa a servi-la para sempre: o código muda,
+// o navegador continua com o antigo e a tela quebra de formas difíceis de
+// entender. Por isso só registramos em produção.
+//
+// Quem já visitou o app em dev tem um SW registrado que continuaria sequestrando
+// as requisições mesmo depois desta correção — daí o unregister + limpeza de
+// cache: o ambiente se conserta sozinho, sem ninguém precisar mexer no DevTools.
+function setupServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      if (regs.length === 0) return;
+      Promise.all(regs.map((r) => r.unregister()))
+        .then(() => caches?.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))))
+        .then(() => {
+          console.info("[dev] service worker removido; recarregando com código atual.");
+          window.location.reload();
+        })
+        .catch(() => {});
+    });
+    return;
+  }
+
   const register = () => {
     navigator.serviceWorker
       .register("/sw.js")
@@ -154,7 +186,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    registerServiceWorker();
+    setupServiceWorker();
   }, []);
 
   return (
