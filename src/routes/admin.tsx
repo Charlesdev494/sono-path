@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { BookOpen, Brain, Loader2, ShieldCheck, Stethoscope, ArrowLeft } from "lucide-react";
+import { BookOpen, Brain, Loader2, ShieldCheck, Stethoscope, ArrowLeft, Users } from "lucide-react";
 
 import { useAuth, useProfile } from "@/lib/auth";
 
@@ -56,8 +56,9 @@ function AdminLayout() {
           </Link>
         </div>
 
-        <nav className="mx-auto flex max-w-6xl gap-1 px-3">
+        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3">
           <Aba to="/admin" icon={ShieldCheck} label="Visão geral" exata />
+          <Aba to="/admin/alunos" icon={Users} label="Alunos" />
           <Aba to="/admin/quiz" icon={Brain} label="Quiz" />
           <Aba to="/admin/casos" icon={Stethoscope} label="Casos clínicos" />
           <Aba to="/admin/atlas" icon={BookOpen} label="Atlas" />

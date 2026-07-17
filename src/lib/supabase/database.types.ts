@@ -637,13 +637,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_alunos: {
+        Args: never
+        Returns: {
+          acertos: number
+          cidade: string
+          criado_em: string
+          especialidade: string
+          nivel: number
+          nome: string
+          pontos: number
+          respostas: number
+          streak: number
+          taxa_acerto: number
+          ultimo_acesso: string
+          user_id: string
+        }[]
+      }
+      admin_stats_atividade: {
+        Args: { p_dias?: number }
+        Returns: {
+          acertos: number
+          alunos_ativos: number
+          dia: string
+          erros: number
+        }[]
+      }
+      admin_stats_niveis: {
+        Args: never
+        Returns: {
+          alunos: number
+          nivel: number
+        }[]
+      }
       admin_stats_overview: {
         Args: never
         Returns: {
+          acertos_total: number
+          ativos_30d: number
           ativos_7d: number
           casos_publicados: number
+          erros_total: number
+          estruturas_publicadas: number
           quiz_publicados: number
+          quiz_rascunhos: number
           respostas_total: number
+          streak_medio: number
+          taxa_acerto: number
+          usuarios_novos_7d: number
           usuarios_total: number
         }[]
       }
@@ -652,10 +693,22 @@ export type Database = {
         Returns: {
           acertos: number
           enunciado: string
+          nivel: Database["public"]["Enums"]["quiz_level"]
           question_id: string
           regiao: string
           respostas: number
           slug: string
+          status: Database["public"]["Enums"]["content_status"]
+          taxa_acerto: number
+        }[]
+      }
+      admin_stats_regioes: {
+        Args: never
+        Returns: {
+          acertos: number
+          questoes: number
+          regiao: string
+          respostas: number
           taxa_acerto: number
         }[]
       }

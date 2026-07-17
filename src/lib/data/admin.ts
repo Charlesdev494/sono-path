@@ -118,6 +118,50 @@ export const statsQuizQueryOptions = () =>
     },
   });
 
+export const statsAtividadeQueryOptions = (dias: number) =>
+  queryOptions({
+    queryKey: ["admin", "stats", "atividade", dias],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_stats_atividade", { p_dias: dias });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const statsRegioesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["admin", "stats", "regioes"],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_stats_regioes");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const statsNiveisQueryOptions = () =>
+  queryOptions({
+    queryKey: ["admin", "stats", "niveis"],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_stats_niveis");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const alunosQueryOptions = () =>
+  queryOptions({
+    queryKey: ["admin", "alunos"],
+    queryFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc("admin_alunos");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 // ---------------------------------------------------------------------------
 // escrita
 // ---------------------------------------------------------------------------
