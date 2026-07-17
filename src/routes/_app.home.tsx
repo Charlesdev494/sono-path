@@ -11,6 +11,7 @@ import {
   BookOpen,
   Check,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useAuth, useProfile } from "@/lib/auth";
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_app/home")({
 
 function Home() {
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile, isAdmin } = useProfile();
   const { data: progress } = useQuery(progressQueryOptions(user?.id));
   const { data: atlas } = useQuery(atlasQueryOptions());
 
@@ -51,11 +52,22 @@ function Home() {
 
   return (
     <div className="flex flex-col gap-5 px-5 pt-8">
-      <header>
-        <p className="text-sm text-muted-foreground">{saudacao},</p>
-        <h1 className="text-2xl font-bold">
-          Dr. {profile.nome.split(" ")[0] || "Colega"}
-        </h1>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{saudacao},</p>
+          <h1 className="text-2xl font-bold">Dr. {profile.nome.split(" ")[0] || "Colega"}</h1>
+        </div>
+        {/* Só o Charles vê este atalho. Esconder não é a proteção — a RLS é;
+            isto é só para não mostrar uma porta que não abre. */}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-xs font-medium transition-colors hover:bg-accent"
+          >
+            <ShieldCheck className="size-4" />
+            Admin
+          </Link>
+        )}
       </header>
 
       {/* Stats card */}
@@ -131,10 +143,7 @@ function Home() {
       {/* Quick access atlas */}
       <section>
         <h2 className="mb-3 font-display text-lg font-semibold">Atalhos</h2>
-        <Link
-          to="/atlas"
-          className="flex items-center gap-3 rounded-xl border bg-card p-4"
-        >
+        <Link to="/atlas" className="flex items-center gap-3 rounded-xl border bg-card p-4">
           <div className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
             <BookOpen className="size-5" />
           </div>

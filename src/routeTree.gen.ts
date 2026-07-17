@@ -11,16 +11,24 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppQuizRouteImport } from './routes/_app.quiz'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCasoRouteImport } from './routes/_app.caso'
 import { Route as AppAtlasRouteImport } from './routes/_app.atlas'
+import { Route as AdminQuizIndexRouteImport } from './routes/admin.quiz.index'
+import { Route as AdminCasosIndexRouteImport } from './routes/admin.casos.index'
+import { Route as AdminAtlasIndexRouteImport } from './routes/admin.atlas.index'
 import { Route as AppCasoIndexRouteImport } from './routes/_app.caso.index'
 import { Route as AppAtlasIndexRouteImport } from './routes/_app.atlas.index'
+import { Route as AdminQuizIdRouteImport } from './routes/admin.quiz.$id'
+import { Route as AdminCasosIdRouteImport } from './routes/admin.casos.$id'
+import { Route as AdminAtlasIdRouteImport } from './routes/admin.atlas.$id'
 import { Route as AppCasoIdRouteImport } from './routes/_app.caso.$id'
 import { Route as AppAtlasRegionRouteImport } from './routes/_app.atlas.$region'
 import { Route as AppAtlasRegionIndexRouteImport } from './routes/_app.atlas.$region.index'
@@ -36,6 +44,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -44,6 +57,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
@@ -75,6 +93,21 @@ const AppAtlasRoute = AppAtlasRouteImport.update({
   path: '/atlas',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminQuizIndexRoute = AdminQuizIndexRouteImport.update({
+  id: '/quiz/',
+  path: '/quiz/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCasosIndexRoute = AdminCasosIndexRouteImport.update({
+  id: '/casos/',
+  path: '/casos/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAtlasIndexRoute = AdminAtlasIndexRouteImport.update({
+  id: '/atlas/',
+  path: '/atlas/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AppCasoIndexRoute = AppCasoIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -84,6 +117,21 @@ const AppAtlasIndexRoute = AppAtlasIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppAtlasRoute,
+} as any)
+const AdminQuizIdRoute = AdminQuizIdRouteImport.update({
+  id: '/quiz/$id',
+  path: '/quiz/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCasosIdRoute = AdminCasosIdRouteImport.update({
+  id: '/casos/$id',
+  path: '/casos/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAtlasIdRoute = AdminAtlasIdRouteImport.update({
+  id: '/atlas/$id',
+  path: '/atlas/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppCasoIdRoute = AppCasoIdRouteImport.update({
   id: '/$id',
@@ -108,6 +156,7 @@ const AppAtlasRegionStructureRoute = AppAtlasRegionStructureRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/atlas': typeof AppAtlasRouteWithChildren
@@ -116,10 +165,17 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/admin/': typeof AdminIndexRoute
   '/atlas/$region': typeof AppAtlasRegionRouteWithChildren
   '/caso/$id': typeof AppCasoIdRoute
+  '/admin/atlas/$id': typeof AdminAtlasIdRoute
+  '/admin/casos/$id': typeof AdminCasosIdRoute
+  '/admin/quiz/$id': typeof AdminQuizIdRoute
   '/atlas/': typeof AppAtlasIndexRoute
   '/caso/': typeof AppCasoIndexRoute
+  '/admin/atlas/': typeof AdminAtlasIndexRoute
+  '/admin/casos/': typeof AdminCasosIndexRoute
+  '/admin/quiz/': typeof AdminQuizIndexRoute
   '/atlas/$region/$structure': typeof AppAtlasRegionStructureRoute
   '/atlas/$region/': typeof AppAtlasRegionIndexRoute
 }
@@ -131,9 +187,16 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/admin': typeof AdminIndexRoute
   '/caso/$id': typeof AppCasoIdRoute
+  '/admin/atlas/$id': typeof AdminAtlasIdRoute
+  '/admin/casos/$id': typeof AdminCasosIdRoute
+  '/admin/quiz/$id': typeof AdminQuizIdRoute
   '/atlas': typeof AppAtlasIndexRoute
   '/caso': typeof AppCasoIndexRoute
+  '/admin/atlas': typeof AdminAtlasIndexRoute
+  '/admin/casos': typeof AdminCasosIndexRoute
+  '/admin/quiz': typeof AdminQuizIndexRoute
   '/atlas/$region/$structure': typeof AppAtlasRegionStructureRoute
   '/atlas/$region': typeof AppAtlasRegionIndexRoute
 }
@@ -141,6 +204,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/_app/atlas': typeof AppAtlasRouteWithChildren
@@ -149,10 +213,17 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/quiz': typeof AppQuizRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/admin/': typeof AdminIndexRoute
   '/_app/atlas/$region': typeof AppAtlasRegionRouteWithChildren
   '/_app/caso/$id': typeof AppCasoIdRoute
+  '/admin/atlas/$id': typeof AdminAtlasIdRoute
+  '/admin/casos/$id': typeof AdminCasosIdRoute
+  '/admin/quiz/$id': typeof AdminQuizIdRoute
   '/_app/atlas/': typeof AppAtlasIndexRoute
   '/_app/caso/': typeof AppCasoIndexRoute
+  '/admin/atlas/': typeof AdminAtlasIndexRoute
+  '/admin/casos/': typeof AdminCasosIndexRoute
+  '/admin/quiz/': typeof AdminQuizIndexRoute
   '/_app/atlas/$region/$structure': typeof AppAtlasRegionStructureRoute
   '/_app/atlas/$region/': typeof AppAtlasRegionIndexRoute
 }
@@ -160,6 +231,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/login'
     | '/onboarding'
     | '/atlas'
@@ -168,10 +240,17 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/quiz'
     | '/auth/callback'
+    | '/admin/'
     | '/atlas/$region'
     | '/caso/$id'
+    | '/admin/atlas/$id'
+    | '/admin/casos/$id'
+    | '/admin/quiz/$id'
     | '/atlas/'
     | '/caso/'
+    | '/admin/atlas/'
+    | '/admin/casos/'
+    | '/admin/quiz/'
     | '/atlas/$region/$structure'
     | '/atlas/$region/'
   fileRoutesByTo: FileRoutesByTo
@@ -183,15 +262,23 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/quiz'
     | '/auth/callback'
+    | '/admin'
     | '/caso/$id'
+    | '/admin/atlas/$id'
+    | '/admin/casos/$id'
+    | '/admin/quiz/$id'
     | '/atlas'
     | '/caso'
+    | '/admin/atlas'
+    | '/admin/casos'
+    | '/admin/quiz'
     | '/atlas/$region/$structure'
     | '/atlas/$region'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/admin'
     | '/login'
     | '/onboarding'
     | '/_app/atlas'
@@ -200,10 +287,17 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/quiz'
     | '/auth/callback'
+    | '/admin/'
     | '/_app/atlas/$region'
     | '/_app/caso/$id'
+    | '/admin/atlas/$id'
+    | '/admin/casos/$id'
+    | '/admin/quiz/$id'
     | '/_app/atlas/'
     | '/_app/caso/'
+    | '/admin/atlas/'
+    | '/admin/casos/'
+    | '/admin/quiz/'
     | '/_app/atlas/$region/$structure'
     | '/_app/atlas/$region/'
   fileRoutesById: FileRoutesById
@@ -211,6 +305,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -232,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -245,6 +347,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -288,6 +397,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAtlasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/admin/quiz/': {
+      id: '/admin/quiz/'
+      path: '/quiz'
+      fullPath: '/admin/quiz/'
+      preLoaderRoute: typeof AdminQuizIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/casos/': {
+      id: '/admin/casos/'
+      path: '/casos'
+      fullPath: '/admin/casos/'
+      preLoaderRoute: typeof AdminCasosIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/atlas/': {
+      id: '/admin/atlas/'
+      path: '/atlas'
+      fullPath: '/admin/atlas/'
+      preLoaderRoute: typeof AdminAtlasIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_app/caso/': {
       id: '/_app/caso/'
       path: '/'
@@ -301,6 +431,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/atlas/'
       preLoaderRoute: typeof AppAtlasIndexRouteImport
       parentRoute: typeof AppAtlasRoute
+    }
+    '/admin/quiz/$id': {
+      id: '/admin/quiz/$id'
+      path: '/quiz/$id'
+      fullPath: '/admin/quiz/$id'
+      preLoaderRoute: typeof AdminQuizIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/casos/$id': {
+      id: '/admin/casos/$id'
+      path: '/casos/$id'
+      fullPath: '/admin/casos/$id'
+      preLoaderRoute: typeof AdminCasosIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/atlas/$id': {
+      id: '/admin/atlas/$id'
+      path: '/atlas/$id'
+      fullPath: '/admin/atlas/$id'
+      preLoaderRoute: typeof AdminAtlasIdRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_app/caso/$id': {
       id: '/_app/caso/$id'
@@ -392,9 +543,32 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminAtlasIdRoute: typeof AdminAtlasIdRoute
+  AdminCasosIdRoute: typeof AdminCasosIdRoute
+  AdminQuizIdRoute: typeof AdminQuizIdRoute
+  AdminAtlasIndexRoute: typeof AdminAtlasIndexRoute
+  AdminCasosIndexRoute: typeof AdminCasosIndexRoute
+  AdminQuizIndexRoute: typeof AdminQuizIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminAtlasIdRoute: AdminAtlasIdRoute,
+  AdminCasosIdRoute: AdminCasosIdRoute,
+  AdminQuizIdRoute: AdminQuizIdRoute,
+  AdminAtlasIndexRoute: AdminAtlasIndexRoute,
+  AdminCasosIndexRoute: AdminCasosIndexRoute,
+  AdminQuizIndexRoute: AdminQuizIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   AuthCallbackRoute: AuthCallbackRoute,

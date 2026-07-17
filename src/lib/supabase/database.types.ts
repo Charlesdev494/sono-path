@@ -533,6 +533,13 @@ export type Database = {
       delete_own_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       marcar_missao: { Args: { p_missao: string }; Returns: string[] }
+      regioes_existentes: {
+        Args: never
+        Returns: {
+          regiao: string
+          total: number
+        }[]
+      }
       registrar_resposta: {
         Args: {
           p_origem: Database["public"]["Enums"]["answer_source"]
