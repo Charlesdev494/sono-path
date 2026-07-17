@@ -21,6 +21,7 @@ import {
 import { ChevronLeft, Plus, Trash2, Check, Loader2, Eye, Copy, Sparkles } from "lucide-react";
 
 import { CampoImagem } from "@/components/admin/CampoImagem";
+import { GerarQuestaoComIA } from "@/components/admin/GerarComIA";
 import {
   adminQuizQueryOptions,
   regioesQueryOptions,
@@ -48,6 +49,10 @@ type Form = {
   correta: string;
   explicacao: string;
   status: "rascunho" | "publicado";
+  // Marca a procedência do conteúdo. Vira 'ia' quando o rascunho saiu do
+  // copiloto — fica visível na lista e no banco, para nunca se perder de vista
+  // o que foi escrito por máquina.
+  origem: "manual" | "ia";
 };
 
 const VAZIO: Form = {
@@ -67,6 +72,7 @@ const VAZIO: Form = {
   correta: "A",
   explicacao: "",
   status: "rascunho",
+  origem: "manual",
 };
 
 function AdminQuizEditor() {
@@ -104,6 +110,7 @@ function AdminQuizEditor() {
       correta: existente.correta,
       explicacao: existente.explicacao,
       status: existente.status,
+      origem: existente.origem,
     });
   }, [existente]);
 
@@ -186,6 +193,7 @@ function AdminQuizEditor() {
         correta: dados.correta,
         explicacao: dados.explicacao.trim(),
         status: dados.status,
+        origem: dados.origem,
       });
       setForm((f) => ({ ...f, status: dados.status }));
       setSalvo(true);
@@ -225,6 +233,12 @@ function AdminQuizEditor() {
           Quiz
         </Link>
         <div className="flex items-center gap-2">
+          {form.origem === "ia" && (
+            <Badge variant="outline" className="gap-1">
+              <Sparkles className="size-3" />
+              Rascunho de IA
+            </Badge>
+          )}
           {form.status === "publicado" ? (
             <Badge className="bg-success/20 text-success hover:bg-success/20">No ar</Badge>
           ) : (
@@ -242,6 +256,28 @@ function AdminQuizEditor() {
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         {/* editor */}
         <div className="flex flex-col gap-4">
+          {/* Some por completo quando não há chave de IA no servidor. */}
+          <GerarQuestaoComIA
+            regiao={form.regiao}
+            nivel={form.nivel}
+            onGerado={(r) => {
+              setForm((f) => ({
+                ...f,
+                enunciado: r.enunciado,
+                alternativas: r.alternativas,
+                correta: r.correta,
+                explicacao: r.explicacao,
+                imagem_label: r.imagem_label || f.imagem_label,
+                // Nasce como rascunho de IA e assim fica registrado. Só sai do
+                // ar de "rascunho" quando o Charles clicar em Publicar.
+                origem: "ia",
+                status: "rascunho",
+              }));
+              setSalvo(false);
+              setErro(null);
+            }}
+          />
+
           <Card className="flex flex-col gap-4 p-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="enunciado">Enunciado</Label>
