@@ -8,6 +8,7 @@ import { Check, X, ChevronLeft, Loader2 } from "lucide-react";
 
 import { casosQueryOptions, type QuizLetra } from "@/lib/data/content";
 import { useMarcarMissao, useRegistrarResposta } from "@/lib/data/progress";
+import { useConferirConquistas } from "@/lib/usarConquistas";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/_app/caso/$id")({
@@ -28,6 +29,7 @@ function CasoDetailPage() {
   const { data: casos, isLoading } = useQuery(casosQueryOptions());
   const registrar = useRegistrarResposta();
   const marcarMissao = useMarcarMissao();
+  const conferirConquistas = useConferirConquistas();
 
   const [respostas, setRespostas] = useState<Record<string, QuizLetra>>({});
   const [finalizado, setFinalizado] = useState(false);
@@ -78,6 +80,7 @@ function CasoDetailPage() {
       await supabase.rpc("concluir_caso", { p_caso_id: caso.id });
       await marcarMissao.mutateAsync("caso");
       await queryClient.invalidateQueries({ queryKey: ["progress"] });
+      await conferirConquistas();
     } catch {
       // A resolução aparece de qualquer forma — o estudo não depende do
       // registro dos pontos ter dado certo.

@@ -5,6 +5,7 @@ import { ChevronLeft, Loader2 } from "lucide-react";
 
 import { atlasQueryOptions } from "@/lib/data/content";
 import { useMarcarMissao, useRegistrarVisitaAtlas } from "@/lib/data/progress";
+import { useConferirConquistas } from "@/lib/usarConquistas";
 
 export const Route = createFileRoute("/_app/atlas/$region/$structure")({
   head: ({ params }) => ({
@@ -18,6 +19,7 @@ function StructurePage() {
   const { data: atlas, isLoading } = useQuery(atlasQueryOptions());
   const registrarVisita = useRegistrarVisitaAtlas();
   const marcarMissao = useMarcarMissao();
+  const conferirConquistas = useConferirConquistas();
 
   const r = atlas?.find((x) => x.slug === region);
   const s = r?.estruturas.find((x) => x.slug === structure);
@@ -31,7 +33,7 @@ function StructurePage() {
     const key = `${region}/${structure}`;
     if (jaRegistrou.current === key) return;
     jaRegistrou.current = key;
-    registrarVisita.mutate(key);
+    registrarVisita.mutate(key, { onSuccess: () => conferirConquistas() });
     marcarMissao.mutate("atlas");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, structure, s]);

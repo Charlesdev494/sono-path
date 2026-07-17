@@ -16,11 +16,13 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AppRankingRouteImport } from './routes/_app.ranking'
 import { Route as AppQuizRouteImport } from './routes/_app.quiz'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCasoRouteImport } from './routes/_app.caso'
 import { Route as AppAtlasRouteImport } from './routes/_app.atlas'
+import { Route as AppAmigosRouteImport } from './routes/_app.amigos'
 import { Route as AdminQuizIndexRouteImport } from './routes/admin.quiz.index'
 import { Route as AdminCasosIndexRouteImport } from './routes/admin.casos.index'
 import { Route as AdminAtlasIndexRouteImport } from './routes/admin.atlas.index'
@@ -68,6 +70,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRankingRoute = AppRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppQuizRoute = AppQuizRouteImport.update({
   id: '/quiz',
   path: '/quiz',
@@ -91,6 +98,11 @@ const AppCasoRoute = AppCasoRouteImport.update({
 const AppAtlasRoute = AppAtlasRouteImport.update({
   id: '/atlas',
   path: '/atlas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAmigosRoute = AppAmigosRouteImport.update({
+  id: '/amigos',
+  path: '/amigos',
   getParentRoute: () => AppRoute,
 } as any)
 const AdminQuizIndexRoute = AdminQuizIndexRouteImport.update({
@@ -159,11 +171,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/amigos': typeof AppAmigosRoute
   '/atlas': typeof AppAtlasRouteWithChildren
   '/caso': typeof AppCasoRouteWithChildren
   '/home': typeof AppHomeRoute
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
+  '/ranking': typeof AppRankingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/atlas/$region': typeof AppAtlasRegionRouteWithChildren
@@ -183,9 +197,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/amigos': typeof AppAmigosRoute
   '/home': typeof AppHomeRoute
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
+  '/ranking': typeof AppRankingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
   '/caso/$id': typeof AppCasoIdRoute
@@ -207,11 +223,13 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/_app/amigos': typeof AppAmigosRoute
   '/_app/atlas': typeof AppAtlasRouteWithChildren
   '/_app/caso': typeof AppCasoRouteWithChildren
   '/_app/home': typeof AppHomeRoute
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/quiz': typeof AppQuizRoute
+  '/_app/ranking': typeof AppRankingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/_app/atlas/$region': typeof AppAtlasRegionRouteWithChildren
@@ -234,11 +252,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/onboarding'
+    | '/amigos'
     | '/atlas'
     | '/caso'
     | '/home'
     | '/perfil'
     | '/quiz'
+    | '/ranking'
     | '/auth/callback'
     | '/admin/'
     | '/atlas/$region'
@@ -258,9 +278,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/amigos'
     | '/home'
     | '/perfil'
     | '/quiz'
+    | '/ranking'
     | '/auth/callback'
     | '/admin'
     | '/caso/$id'
@@ -281,11 +303,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/onboarding'
+    | '/_app/amigos'
     | '/_app/atlas'
     | '/_app/caso'
     | '/_app/home'
     | '/_app/perfil'
     | '/_app/quiz'
+    | '/_app/ranking'
     | '/auth/callback'
     | '/admin/'
     | '/_app/atlas/$region'
@@ -362,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/ranking': {
+      id: '/_app/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AppRankingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/quiz': {
       id: '/_app/quiz'
       path: '/quiz'
@@ -395,6 +426,13 @@ declare module '@tanstack/react-router' {
       path: '/atlas'
       fullPath: '/atlas'
       preLoaderRoute: typeof AppAtlasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/amigos': {
+      id: '/_app/amigos'
+      path: '/amigos'
+      fullPath: '/amigos'
+      preLoaderRoute: typeof AppAmigosRouteImport
       parentRoute: typeof AppRoute
     }
     '/admin/quiz/': {
@@ -526,19 +564,23 @@ const AppCasoRouteWithChildren =
   AppCasoRoute._addFileChildren(AppCasoRouteChildren)
 
 interface AppRouteChildren {
+  AppAmigosRoute: typeof AppAmigosRoute
   AppAtlasRoute: typeof AppAtlasRouteWithChildren
   AppCasoRoute: typeof AppCasoRouteWithChildren
   AppHomeRoute: typeof AppHomeRoute
   AppPerfilRoute: typeof AppPerfilRoute
   AppQuizRoute: typeof AppQuizRoute
+  AppRankingRoute: typeof AppRankingRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAmigosRoute: AppAmigosRoute,
   AppAtlasRoute: AppAtlasRouteWithChildren,
   AppCasoRoute: AppCasoRouteWithChildren,
   AppHomeRoute: AppHomeRoute,
   AppPerfilRoute: AppPerfilRoute,
   AppQuizRoute: AppQuizRoute,
+  AppRankingRoute: AppRankingRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

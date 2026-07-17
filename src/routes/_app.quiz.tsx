@@ -21,6 +21,7 @@ import {
   useMarcarMissao,
   useRegistrarResposta,
 } from "@/lib/data/progress";
+import { useConferirConquistas } from "@/lib/usarConquistas";
 
 type QuizNivel = "basico" | "avancado";
 
@@ -40,6 +41,7 @@ function QuizPage() {
   const { data: respostas } = useQuery(respostasQueryOptions(user?.id));
   const registrar = useRegistrarResposta();
   const marcarMissao = useMarcarMissao();
+  const conferirConquistas = useConferirConquistas();
 
   const [nivel, setNivel] = useState<QuizNivel>("basico");
   const [regiao, setRegiao] = useState<string>("Todas");
@@ -128,6 +130,7 @@ function QuizPage() {
         resposta: alt.letraOriginal,
       });
       await marcarMissao.mutateAsync("quiz");
+      await conferirConquistas();
     } catch {
       // A resposta já está na tela; se o registro falhar, o feedback continua
       // válido e a pontuação é recuperada quando a conexão voltar.

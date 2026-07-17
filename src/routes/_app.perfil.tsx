@@ -16,9 +16,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Flame, MapPin, Briefcase, Trophy, LogOut, Trash2, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Flame, MapPin, Briefcase, Trophy, LogOut, Trash2, Loader2, Lock } from "lucide-react";
 
 import { sair, useAuth, useProfile } from "@/lib/auth";
+import {
+  catalogoBadgesQueryOptions,
+  conquistasQueryOptions,
+  usePrivacidadeRanking,
+} from "@/lib/data/social";
 import { atlasQueryOptions, casosQueryOptions, quizQueryOptions } from "@/lib/data/content";
 import {
   calcularNivel,
@@ -44,6 +50,9 @@ function PerfilPage() {
   const { data: atlas } = useQuery(atlasQueryOptions());
   const { data: quiz } = useQuery(quizQueryOptions());
   const { data: casos } = useQuery(casosQueryOptions());
+  const { data: conquistas } = useQuery(conquistasQueryOptions(user?.id));
+  const { data: catalogo } = useQuery(catalogoBadgesQueryOptions());
+  const privacidade = usePrivacidadeRanking();
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -57,8 +66,7 @@ function PerfilPage() {
   // então filtramos para o contador de estruturas não inflar.
   const estruturasVistas =
     progress?.atlas_visitados.filter((v) => !v.startsWith("caso:")).length ?? 0;
-  const casosFeitos =
-    progress?.atlas_visitados.filter((v) => v.startsWith("caso:")).length ?? 0;
+  const casosFeitos = progress?.atlas_visitados.filter((v) => v.startsWith("caso:")).length ?? 0;
   const quizRespondidos = respostas?.filter((r) => r.quiz_question_id).length ?? 0;
 
   async function excluirConta() {
@@ -120,6 +128,34 @@ function PerfilPage() {
         <Stat label="Casos" value={`${casosFeitos}/${casos?.length ?? 0}`} />
       </div>
 
+      {/* Conquistas: as ganhas em cores, as demais apagadas — ver o que falta
+          é metade da graça. */}
+      <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display font-semibold">Conquistas</h2>
+          <Badge variant="secondary" className="tabular-nums">
+            {conquistas?.length ?? 0}/{catalogo?.length ?? 0}
+          </Badge>
+        </div>
+        <ul className="grid grid-cols-4 gap-2">
+          {catalogo?.map((b) => {
+            const ganha = conquistas?.some((c) => c.slug === b.slug);
+            return (
+              <li
+                key={b.slug}
+                title={`${b.nome} — ${b.descricao}`}
+                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center ${
+                  ganha ? "border-warm/40 bg-warm/10" : "opacity-40"
+                }`}
+              >
+                <span className={`text-xl ${ganha ? "" : "grayscale"}`}>{b.icone}</span>
+                <span className="text-[10px] font-medium leading-tight">{b.nome}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+
       <Card className="p-4">
         <h2 className="mb-3 font-display font-semibold">Dados</h2>
         <ul className="space-y-2 text-sm">
@@ -163,6 +199,27 @@ function PerfilPage() {
         </ul>
       </Card>
 
+      <Card className="p-4">
+        <h2 className="mb-3 font-display font-semibold">Privacidade</h2>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              <Lock className="size-3.5" />
+              Aparecer para outros colegas
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Quando desligado, você some do ranking e ninguém consegue te encontrar na busca. Seu
+              progresso continua salvo e você continua vendo o seu ranking.
+            </p>
+          </div>
+          <Switch
+            checked={profile.aparece_no_ranking}
+            onCheckedChange={(v) => user && privacidade.mutate({ userId: user.id, aparecer: v })}
+            aria-label="Aparecer para outros colegas"
+          />
+        </div>
+      </Card>
+
       {erro && (
         <p role="alert" className="text-sm text-destructive">
           {erro}
@@ -194,9 +251,9 @@ function PerfilPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir sua conta?</AlertDialogTitle>
               <AlertDialogDescription>
-                Sua conta e todo o seu progresso — {pontos} pontos, {progress?.streak ?? 0}{" "}
-                dias de sequência e o histórico de respostas — serão apagados
-                definitivamente. Não há como desfazer.
+                Sua conta e todo o seu progresso — {pontos} pontos, {progress?.streak ?? 0} dias de
+                sequência e o histórico de respostas — serão apagados definitivamente. Não há como
+                desfazer.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

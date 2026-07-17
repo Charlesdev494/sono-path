@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 import { BottomNav } from "@/components/BottomNav";
+import { Toaster } from "@/components/ui/sonner";
 import { useAuth, useProfile } from "@/lib/auth";
 import { touchStreak } from "@/lib/data/progress";
 
@@ -46,6 +47,10 @@ function AppLayout() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background pb-20">
       <Outlet />
       <BottomNav />
+      {/* O sonner já vinha no projeto, mas nunca tinha sido montado — sem isto
+          os avisos de conquista seriam chamados e não apareceriam. Acima da
+          barra de navegação para não cobrir os botões. */}
+      <Toaster position="top-center" offset={16} />
     </div>
   );
 }

@@ -13,7 +13,8 @@
     "seed": "node --env-file-if-exists=.env scripts/seed-content.mjs",
     "test:rls": "node --env-file-if-exists=.env scripts/test-rls.mjs",
     "types:gen": "node --env-file-if-exists=.env scripts/gen-types.mjs",
-    "make-admin": "node --env-file-if-exists=.env scripts/make-admin.mjs"
+    "make-admin": "node --env-file-if-exists=.env scripts/make-admin.mjs",
+    "test:social": "node --env-file-if-exists=.env scripts/test-social.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -127,6 +127,30 @@ export type Database = {
           },
         ]
       }
+      badges: {
+        Row: {
+          descricao: string
+          icone: string
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          descricao: string
+          icone?: string
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          descricao?: string
+          icone?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       case_questions: {
         Row: {
           alternativas: Json
@@ -277,6 +301,83 @@ export type Database = {
           {
             foreignKeyName: "content_audit_log_actor_id_fkey"
             columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          destinatario_id: string
+          id: string
+          solicitante_id: string
+          status: Database["public"]["Enums"]["friendship_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destinatario_id: string
+          id?: string
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destinatario_id?: string
+          id?: string
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      points_events: {
+        Row: {
+          created_at: string
+          id: number
+          motivo: Database["public"]["Enums"]["point_reason"]
+          pontos: number
+          referencia_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          motivo: Database["public"]["Enums"]["point_reason"]
+          pontos: number
+          referencia_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          motivo?: Database["public"]["Enums"]["point_reason"]
+          pontos?: number
+          referencia_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_events_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -457,6 +558,39 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_slug: string
+          conquistado_em: string
+          user_id: string
+        }
+        Insert: {
+          badge_slug: string
+          conquistado_em?: string
+          user_id: string
+        }
+        Update: {
+          badge_slug?: string
+          conquistado_em?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_slug_fkey"
+            columns: ["badge_slug"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_progress: {
         Row: {
           atlas_visitados: string[]
@@ -529,10 +663,64 @@ export type Database = {
         Args: { p_alternativas: Json; p_letra: string }
         Returns: boolean
       }
+      buscar_usuarios: {
+        Args: { p_termo: string }
+        Returns: {
+          avatar_url: string
+          nivel: number
+          nome: string
+          situacao: string
+          user_id: string
+        }[]
+      }
       concluir_caso: { Args: { p_caso_id: string }; Returns: number }
+      conquistas_de: {
+        Args: { p_user_id: string }
+        Returns: {
+          conquistado_em: string
+          descricao: string
+          icone: string
+          nome: string
+          slug: string
+        }[]
+      }
       delete_own_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       marcar_missao: { Args: { p_missao: string }; Returns: string[] }
+      meus_amigos: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          eu_solicitei: boolean
+          friendship_id: string
+          nivel: number
+          nome: string
+          pontos: number
+          status: Database["public"]["Enums"]["friendship_status"]
+          user_id: string
+        }[]
+      }
+      minha_posicao: {
+        Args: { p_escopo?: string; p_periodo?: string }
+        Returns: {
+          pontos: number
+          posicao: number
+          total_participantes: number
+        }[]
+      }
+      nivel_de: { Args: { p_pontos: number }; Returns: number }
+      ranking: {
+        Args: { p_escopo?: string; p_limite?: number; p_periodo?: string }
+        Returns: {
+          avatar_url: string
+          e_voce: boolean
+          nivel: number
+          nome: string
+          pontos: number
+          posicao: number
+          user_id: string
+        }[]
+      }
       regioes_existentes: {
         Args: never
         Returns: {
@@ -566,11 +754,22 @@ export type Database = {
           ultimo_acesso: string
         }[]
       }
+      verificar_conquistas: {
+        Args: never
+        Returns: {
+          descricao: string
+          icone: string
+          nome: string
+          slug: string
+        }[]
+      }
     }
     Enums: {
       answer_source: "quiz" | "caso"
       content_origin: "manual" | "ia"
       content_status: "rascunho" | "publicado"
+      friendship_status: "pendente" | "aceito" | "recusado"
+      point_reason: "quiz" | "caso_questao" | "caso_bonus" | "atlas"
       quiz_level: "basico" | "avancado"
       user_role: "user" | "admin"
     }
@@ -703,6 +902,8 @@ export const Constants = {
       answer_source: ["quiz", "caso"],
       content_origin: ["manual", "ia"],
       content_status: ["rascunho", "publicado"],
+      friendship_status: ["pendente", "aceito", "recusado"],
+      point_reason: ["quiz", "caso_questao", "caso_bonus", "atlas"],
       quiz_level: ["basico", "avancado"],
       user_role: ["user", "admin"],
     },
