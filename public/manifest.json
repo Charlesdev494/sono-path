@@ -1,26 +1,63 @@
 {
-  "name": "US360",
+  "id": "/",
+  "name": "US360 · Sonoanatomia",
   "short_name": "US360",
-  "description": "O copiloto do médico ultrassonografista. Microaprendizado diário em sonoanatomia.",
-  "start_url": "/",
+  "description": "O copiloto do médico ultrassonografista. Microaprendizado diário em sonoanatomia e ultrassonografia musculoesquelética.",
+  "start_url": "/home?fonte=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#1e3a8a",
   "theme_color": "#1e3a8a",
   "orientation": "portrait",
-  "scope": "/",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["medical", "education"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quiz diário",
+      "short_name": "Quiz",
+      "url": "/quiz?fonte=atalho",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Caso clínico",
+      "short_name": "Caso",
+      "url": "/caso?fonte=atalho",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Atlas",
+      "short_name": "Atlas",
+      "url": "/atlas?fonte=atalho",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { InstalarApp } from "@/components/InstalarApp";
 import { useAuth, useProfile } from "@/lib/auth";
 import { calcularNivel, missoesDeHoje, progressQueryOptions } from "@/lib/data/progress";
 import { atlasQueryOptions } from "@/lib/data/content";
@@ -69,6 +70,9 @@ function Home() {
           </Link>
         )}
       </header>
+
+      {/* Só aparece se der para instalar e a pessoa ainda não instalou. */}
+      <InstalarApp />
 
       {/* Stats card */}
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary to-primary-glow p-5 text-primary-foreground">

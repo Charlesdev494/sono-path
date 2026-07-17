@@ -121,7 +121,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap",
       },
-      { rel: "apple-touch-icon", href: "/icons/icon-192x192.png" },
+      // iOS ignora os ícones do manifest e usa este — 180x180, achatado sobre
+      // o azul da marca (ele não respeita transparência aqui).
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
