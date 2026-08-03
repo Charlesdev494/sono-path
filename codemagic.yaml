@@ -18,7 +18,7 @@ workflows:
       # ela tem do lado da Apple, e é sensível a maiúscula. Nome diferente dá
       # "App Store Connect integration ... does not exist" antes de qualquer
       # etapa rodar.
-      app_store_connect: Codemagic
+      app_store_connect: US360
 
     environment:
       node: 22
