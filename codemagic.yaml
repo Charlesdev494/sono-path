@@ -30,8 +30,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: "com.drcharles.sonopath"
-        # Precisa bater com o "ID Apple" do app no App Store Connect.
-        APP_STORE_APPLE_ID: 6797540534
         # Backend das server functions dentro do app (suporte, IA).
         NATIVE_API_URL: "https://sono-path.vercel.app"
       groups:
@@ -127,11 +125,17 @@ workflows:
       # Xcode resolve os pacotes sozinho durante a compilação.
 
       - name: Número da build
-        # A Apple recusa duas builds com o mesmo número. O contador do Codemagic
-        # resolve isso sem ninguém ter de lembrar de incrementar nada.
+        # A Apple recusa dois envios com o mesmo CFBundleVersion.
+        #
+        # BUILD_NUMBER é o índice da execução no Codemagic: sempre cresce e não
+        # depende de consultar nada. A versão anterior usava
+        # get-latest-app-store-build-number, que só enxerga builds PUBLICADAS na
+        # App Store — num app inédito ela volta vazia, o cálculo dava 1 de novo
+        # e o envio era recusado com "bundle version must be higher".
         script: |
           cd ios/App
-          agvtool new-version -all "$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))"
+          agvtool new-version -all "$BUILD_NUMBER"
+          echo "CFBundleVersion desta compilação: $BUILD_NUMBER"
 
       - name: Compilar e assinar o .ipa
         # --project, e não --workspace: o template SPM não gera
