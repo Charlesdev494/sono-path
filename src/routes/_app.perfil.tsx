@@ -292,7 +292,14 @@ function PerfilPage() {
         </AlertDialog>
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">US360 · v2</p>
+      {/* A Apple exige que a política seja alcançável de dentro do app, não só
+          pelo link da ficha na loja (Guideline 5.1.1). */}
+      <p className="text-center text-xs text-muted-foreground">
+        US360 · v2 ·{" "}
+        <Link to="/privacidade" className="underline underline-offset-4">
+          Privacidade
+        </Link>
+      </p>
     </div>
   );
 }

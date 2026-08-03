@@ -210,11 +210,14 @@ function Suporte() {
         )}
       </section>
 
-      <footer className="border-t pt-4 text-xs text-muted-foreground">
+      <footer className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground">
         <p>
           O US360 é uma ferramenta de estudo para profissionais e estudantes da área da saúde. Não
           realiza diagnóstico, não substitui avaliação médica e não se destina ao uso por pacientes.
         </p>
+        <Link to="/privacidade" className="underline underline-offset-4">
+          Política de Privacidade
+        </Link>
       </footer>
     </div>
   );

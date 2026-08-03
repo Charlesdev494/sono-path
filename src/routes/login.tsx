@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -182,6 +182,18 @@ function Login() {
           >
             {modo === "entrar" ? "Criar conta" : "Entrar"}
           </button>
+        </p>
+
+        {/* Antes de criar conta a pessoa tem de conseguir ler no que está se
+            metendo — e a Apple confere se esses dois links existem. */}
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          <Link to="/privacidade" className="underline underline-offset-4">
+            Privacidade
+          </Link>
+          {" · "}
+          <Link to="/suporte" className="underline underline-offset-4">
+            Suporte
+          </Link>
         </p>
       </div>
     </div>
