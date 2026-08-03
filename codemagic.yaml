@@ -30,20 +30,17 @@ workflows:
         APP_STORE_APPLE_ID: 6797540534
         # Backend das server functions dentro do app (suporte, IA).
         NATIVE_API_URL: "https://sono-path.vercel.app"
+      groups:
+        - ios_signing
 
-      # Assinatura gerenciada pelo Codemagic: ele cria o certificado de
-      # distribuição e o provisioning profile a partir da integração acima, e
-      # guarda a chave privada do certificado por conta própria.
-      #
-      # Tentei antes fazer isso na mão com "app-store-connect
-      # fetch-signing-files --create" e esbarrei em "Cannot save Signing
-      # Certificates without certificate private key": o comando cria o
-      # certificado na Apple, mas o .p12 precisa de uma chave privada que só
-      # existe se alguém a gerar e guardar como segredo. O modo gerenciado
-      # resolve isso sozinho.
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.drcharles.sonopath
+    # Sem bloco ios_signing: verificado na prática que ele apenas BUSCA um
+    # provisioning profile existente e falha com "No matching profiles found"
+    # quando não há nenhum — inclusive com a integração correta. Quem cria é a
+    # etapa "Preparar assinatura", abaixo.
+    #
+    # O grupo traz CERTIFICATE_PRIVATE_KEY, a chave RSA usada para montar o
+    # .p12 do certificado de distribuição. Ela é cadastrada uma vez nas
+    # variáveis de ambiente do app, marcada como secreta.
 
     triggering:
       # Só a main, e sem disparar em pull request: o repositório é público, e um
@@ -56,6 +53,23 @@ workflows:
           source: true
 
     scripts:
+      - name: Preparar assinatura
+        # Cria certificado de distribuição e provisioning profile quando não
+        # existem — que é o caso de todo app que nunca foi compilado.
+        #
+        # --certificate-key é obrigatório: a API da Apple devolve o certificado
+        # público, mas o .p12 que assina o binário precisa da chave privada
+        # correspondente, e ela nunca sai da Apple. Por isso geramos a nossa e
+        # guardamos como segredo — a mesma chave em todos os builds, senão cada
+        # execução criaria um certificado novo e estouraria o limite da conta.
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key="@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          keychain add-certificates
+
       - name: Instalar dependências
         script: npm ci
 
