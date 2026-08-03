@@ -9,10 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, Plus, Trash2, Check, Loader2 } from "lucide-react";
 
 import { CampoImagem } from "@/components/admin/CampoImagem";
+import { GerarEstruturaComIA } from "@/components/admin/GerarComIA";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
 
-type EstruturaRow = Database["public"]["Tables"]["atlas_structures"]["Row"];
+// A região vem junto porque a IA precisa dela para contextualizar a ficha —
+// "Nervo Mediano" no punho e no antebraço não são o mesmo texto.
+type EstruturaRow = Database["public"]["Tables"]["atlas_structures"]["Row"] & {
+  atlas_regions: { nome: string } | null;
+};
 type Imagem = { url: string; legenda: string };
 
 export const Route = createFileRoute("/admin/atlas/$id")({
@@ -30,11 +35,11 @@ function AdminAtlasEditor() {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from("atlas_structures")
-        .select("*")
+        .select("*, atlas_regions(nome)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as EstruturaRow | null;
     },
   });
 
@@ -72,9 +77,13 @@ function AdminAtlasEditor() {
     setSalvo(false);
   };
 
-  async function gravar() {
+  async function gravar(novoStatus?: "rascunho" | "publicado") {
     if (!form.nome.trim()) {
       setErro("A estrutura precisa de um nome.");
+      return;
+    }
+    if (novoStatus === "publicado" && !form.sonoanatomia.trim()) {
+      setErro("Preencha ao menos a sonoanatomia antes de publicar.");
       return;
     }
     setErro(null);
@@ -83,6 +92,7 @@ function AdminAtlasEditor() {
     const { error } = await supabase
       .from("atlas_structures")
       .update({
+        ...(novoStatus ? { status: novoStatus } : {}),
         nome: form.nome.trim(),
         resumo: form.resumo.trim(),
         anatomia: form.anatomia.trim(),
@@ -130,15 +140,39 @@ function AdminAtlasEditor() {
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
-          Atlas
+          {estrutura.atlas_regions?.nome ?? "Atlas"}
         </Link>
-        {salvo && (
-          <span className="flex items-center gap-1 text-xs text-success">
-            <Check className="size-3.5" />
-            Salvo
+        <div className="flex items-center gap-3">
+          {salvo && (
+            <span className="flex items-center gap-1 text-xs text-success">
+              <Check className="size-3.5" />
+              Salvo
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {estrutura.status === "publicado" ? "No ar" : "Rascunho"}
           </span>
-        )}
+        </div>
       </div>
+
+      <GerarEstruturaComIA
+        regiao={estrutura.atlas_regions?.nome ?? ""}
+        nome={form.nome}
+        onGerado={(r) => {
+          // Substitui os textos e mantém o que a IA não escreve (nome e
+          // imagens). Nada vai para o banco antes de o Charles salvar.
+          setForm((f) => ({
+            ...f,
+            resumo: r.resumo,
+            anatomia: r.anatomia,
+            sonoanatomia: r.sonoanatomia,
+            escaneamento: r.escaneamento,
+            armadilhas: r.armadilhas,
+            aplicacoes_clinicas: r.aplicacoes_clinicas,
+          }));
+          setSalvo(false);
+        }}
+      />
 
       <Card className="flex flex-col gap-3 p-4">
         <div className="flex flex-col gap-1.5">
@@ -244,11 +278,20 @@ function AdminAtlasEditor() {
         </p>
       )}
 
-      <div>
-        <Button onClick={gravar} disabled={salvando}>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => gravar()} disabled={salvando}>
           {salvando && <Loader2 className="mr-2 size-4 animate-spin" />}
           Salvar
         </Button>
+        {estrutura.status === "publicado" ? (
+          <Button variant="outline" onClick={() => gravar("rascunho")} disabled={salvando}>
+            Tirar do ar
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={() => gravar("publicado")} disabled={salvando}>
+            Salvar e publicar
+          </Button>
+        )}
       </div>
     </div>
   );

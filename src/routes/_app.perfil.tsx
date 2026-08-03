@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -17,7 +17,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { Flame, MapPin, Briefcase, Trophy, LogOut, Trash2, Loader2, Lock } from "lucide-react";
+import {
+  Flame,
+  MapPin,
+  Briefcase,
+  Trophy,
+  LifeBuoy,
+  LogOut,
+  Trash2,
+  Loader2,
+  Lock,
+} from "lucide-react";
 
 import { sair, useAuth, useProfile } from "@/lib/auth";
 import {
@@ -231,6 +241,13 @@ function PerfilPage() {
       )}
 
       <div className="flex flex-col gap-2">
+        <Button variant="outline" asChild>
+          <Link to="/suporte">
+            <LifeBuoy className="mr-2 size-4" />
+            Ajuda e suporte
+          </Link>
+        </Button>
+
         <Button
           variant="outline"
           onClick={async () => {

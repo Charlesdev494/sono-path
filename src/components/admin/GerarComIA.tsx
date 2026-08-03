@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { traduzirErroIA, useAIDisponivel, useGerarQuestao } from "@/lib/data/ai";
+import { traduzirErroIA, useAIDisponivel, useGerarEstrutura, useGerarQuestao } from "@/lib/data/ai";
 import type { Alternativa } from "@/lib/data/admin";
 
 export type RascunhoQuestao = {
@@ -99,6 +99,126 @@ export function GerarQuestaoComIA({
           value={tema}
           onChange={(e) => setTema(e.target.value)}
           placeholder="Ex: anisotropia do tendão supraespinhal"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              executar();
+            }
+          }}
+        />
+      </div>
+
+      {erro && (
+        <p role="alert" className="text-sm text-destructive">
+          {erro}
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <Button type="button" onClick={executar} disabled={gerar.isPending}>
+          {gerar.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+          {gerar.isPending ? "Escrevendo..." : "Gerar rascunho"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setAberto(false);
+            setErro(null);
+          }}
+          disabled={gerar.isPending}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+export type RascunhoEstrutura = {
+  resumo: string;
+  anatomia: string;
+  sonoanatomia: string;
+  escaneamento: string[];
+  armadilhas: string[];
+  aplicacoes_clinicas: string[];
+};
+
+/**
+ * Botão "Gerar com IA" do editor do Atlas.
+ *
+ * Mesma regra do quiz: some quando não há chave configurada, e o que volta
+ * preenche o formulário em vez de ir para o banco. O Charles lê antes.
+ */
+export function GerarEstruturaComIA({
+  regiao,
+  nome,
+  onGerado,
+}: {
+  regiao: string;
+  nome: string;
+  onGerado: (r: RascunhoEstrutura) => void;
+}) {
+  const disponivel = useAIDisponivel();
+  const gerar = useGerarEstrutura();
+  const [aberto, setAberto] = useState(false);
+  const [tema, setTema] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+
+  if (!disponivel) return null;
+
+  async function executar() {
+    if (!nome.trim()) {
+      setErro("Dê um nome à estrutura antes de gerar.");
+      return;
+    }
+    setErro(null);
+    try {
+      const e = await gerar.mutateAsync({
+        regiao: regiao.trim() || "não informada",
+        nome: nome.trim(),
+        tema: tema.trim() || undefined,
+      });
+      onGerado(e);
+      setAberto(false);
+      setTema("");
+    } catch (e) {
+      setErro(traduzirErroIA(e));
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <Button type="button" variant="outline" onClick={() => setAberto(true)}>
+        <Sparkles className="mr-1.5 size-4" />
+        Gerar com IA
+      </Button>
+    );
+  }
+
+  return (
+    <Card className="flex flex-col gap-3 border-primary/40 bg-primary/5 p-4">
+      <div className="flex items-center gap-1.5">
+        <Sparkles className="size-4 text-primary" />
+        <p className="text-sm font-semibold">Gerar ficha com IA</p>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        A IA escreve resumo, anatomia, sonoanatomia, escaneamento, armadilhas e aplicações clínicas
+        de <b>{nome || "(dê um nome à estrutura)"}</b>
+        {regiao ? ` — região ${regiao}` : ""}. Preenche o formulário para você revisar; as imagens
+        continuam por sua conta.
+      </p>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="tema-estrutura-ia" className="text-xs">
+          Recorte específico (opcional)
+        </Label>
+        <Input
+          id="tema-estrutura-ia"
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          placeholder="Ex: foco na síndrome do túnel do carpo e na razão AST"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();

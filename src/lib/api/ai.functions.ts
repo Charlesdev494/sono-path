@@ -11,6 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 // resto do projeto a migrar.
 import { z } from "zod/v4";
 
+import { chamarIA } from "../ai/chamar.server";
 import { getAIConfig } from "../ai/config.server";
 
 // ---------------------------------------------------------------------------
@@ -51,62 +52,16 @@ const revisaoSchema = z.object({
   mudancas: z.array(z.string()),
 });
 
-// ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-const CONTEXTO = `Você ajuda o Dr. Charles a preparar material de ensino de
-sonoanatomia e ultrassonografia musculoesquelética para médicos brasileiros —
-anestesistas, ortopedistas, radiologistas e especialistas em dor.
-
-Diretrizes:
-- Escreva em português do Brasil, com a terminologia anatômica correta.
-- O público são médicos: seja técnico e preciso, sem simplificar demais.
-- Baseie-se em consenso estabelecido. Se um dado for controverso ou você não
-  tiver certeza, diga isso na explicação em vez de afirmar com convicção.
-- Alternativas erradas devem ser plausíveis (erros que um médico realmente
-  cometeria), nunca absurdas — questão fácil demais não ensina.
-- A explicação é onde o aluno aprende: diga por que a certa está certa E por
-  que as erradas estão erradas.
-
-O que você produz é rascunho. Um médico revisa tudo antes de publicar.`;
-
-// O genérico é o próprio schema (não o tipo resultante) para o TypeScript
-// inferir o formato da resposta a partir dele — é o que faz parsed_output
-// chegar tipado em quem chama.
-async function chamarIA<S extends z.ZodType>(params: {
-  schema: S;
-  prompt: string;
-}): Promise<z.infer<S>> {
-  const config = getAIConfig();
-  if (!config.habilitado) {
-    // Rede de segurança: a interface já esconde os botões sem chave, mas a
-    // função precisa recusar por conta própria.
-    throw new Error("IA_DESABILITADA");
-  }
-
-  // Import dinâmico: mantém o SDK fora do bundle enquanto a IA não for usada.
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const { zodOutputFormat } = await import("@anthropic-ai/sdk/helpers/zod");
-
-  const client = new Anthropic({ apiKey: config.apiKey });
-
-  const resposta = await client.messages.parse({
-    model: config.modelo,
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    system: CONTEXTO,
-    messages: [{ role: "user", content: params.prompt }],
-    output_config: { format: zodOutputFormat(params.schema) },
-  });
-
-  if (resposta.stop_reason === "refusal") {
-    throw new Error("IA_RECUSOU");
-  }
-  if (!resposta.parsed_output) {
-    throw new Error("IA_SEM_RESPOSTA");
-  }
-  return resposta.parsed_output;
-}
+// Uma estrutura do Atlas: os mesmos campos que o editor já tem na tela, para o
+// rascunho cair direto no formulário.
+const estruturaSchema = z.object({
+  resumo: z.string(),
+  anatomia: z.string(),
+  sonoanatomia: z.string(),
+  escaneamento: z.array(z.string()),
+  armadilhas: z.array(z.string()),
+  aplicacoes_clinicas: z.array(z.string()),
+});
 
 // ---------------------------------------------------------------------------
 // funções expostas ao painel
@@ -114,10 +69,11 @@ async function chamarIA<S extends z.ZodType>(params: {
 
 /**
  * O painel pergunta isto ao carregar. Sem chave configurada, os botões de IA
- * não são renderizados — é o que faz a Fase 4 ficar dormente sem estorvar.
+ * não são renderizados — é o que mantém a IA dormente sem estorvar.
  */
 export const aiDisponivel = createServerFn({ method: "GET" }).handler(async () => {
-  return { habilitado: getAIConfig().habilitado };
+  const config = await getAIConfig();
+  return { habilitado: config.habilitado, provedor: config.provedor };
 });
 
 export const gerarQuestaoQuiz = createServerFn({ method: "POST" })
@@ -250,4 +206,43 @@ mudou nada relevante, devolva uma lista vazia.`,
     });
 
     return revisao;
+  });
+
+/**
+ * Rascunho de uma estrutura do Atlas. O Charles digita o nome (e, se quiser,
+ * um tema), a IA escreve os textos e ele revisa antes de salvar — mesma regra
+ * do resto: nada de conteúdo médico publicado sem médico ler.
+ */
+export const gerarEstruturaAtlas = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      regiao: z.string().min(1),
+      nome: z.string().min(1),
+      tema: z.string().max(500).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const estrutura = await chamarIA({
+      schema: estruturaSchema,
+      prompt: `Escreva a ficha de Atlas de sonoanatomia da estrutura "${data.nome}", da região ${data.regiao}.
+${data.tema ? `\nRecorte pedido pelo professor: ${data.tema}` : ""}
+
+Preencha assim:
+- resumo: UMA linha, a que aparece na lista de estruturas.
+- anatomia: a anatomia relevante para quem vai escanear — relações, limites,
+  referências ósseas e musculares que orientam a busca.
+- sonoanatomia: como a estrutura aparece no ultrassom — ecogenicidade, forma,
+  planos, o que a identifica com segurança e o que a distingue do vizinho.
+- escaneamento: passos práticos, um por item. Posição do paciente, transdutor
+  (tipo e frequência), plano inicial e como deslizar até a janela boa.
+- armadilhas: erros que realmente acontecem, um por item. Anisotropia,
+  confusão com estrutura vizinha, artefato que simula lesão.
+- aplicacoes_clinicas: para que serve na prática, um por item — bloqueios,
+  infiltrações, achados patológicos procurados nessa janela.
+
+Não invente medidas de referência ou valores de corte se não tiver certeza do
+consenso: nesse caso, descreva o achado sem número.`,
+    });
+
+    return estrutura;
   });

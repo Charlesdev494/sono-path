@@ -9,13 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AuthRedefinirSenhaRouteImport } from './routes/auth.redefinir-senha'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as AdminIntegracoesRouteImport } from './routes/admin.integracoes'
 import { Route as AppRankingRouteImport } from './routes/_app.ranking'
 import { Route as AppQuizRouteImport } from './routes/_app.quiz'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -38,6 +42,11 @@ import { Route as AppAtlasRegionRouteImport } from './routes/_app.atlas.$region'
 import { Route as AppAtlasRegionIndexRouteImport } from './routes/_app.atlas.$region.index'
 import { Route as AppAtlasRegionStructureRouteImport } from './routes/_app.atlas.$region.$structure'
 
+const SuporteRoute = SuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -67,10 +76,25 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AuthRedefinirSenhaRoute = AuthRedefinirSenhaRouteImport.update({
+  id: '/auth/redefinir-senha',
+  path: '/auth/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminIntegracoesRoute = AdminIntegracoesRouteImport.update({
+  id: '/integracoes',
+  path: '/integracoes',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppRankingRoute = AppRankingRouteImport.update({
   id: '/ranking',
@@ -183,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/suporte': typeof SuporteRoute
   '/amigos': typeof AppAmigosRoute
   '/atlas': typeof AppAtlasRouteWithChildren
   '/caso': typeof AppCasoRouteWithChildren
@@ -190,7 +215,10 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
   '/ranking': typeof AppRankingRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/redefinir-senha': typeof AuthRedefinirSenhaRoute
   '/admin/': typeof AdminIndexRoute
   '/atlas/$region': typeof AppAtlasRegionRouteWithChildren
   '/caso/$id': typeof AppCasoIdRoute
@@ -211,12 +239,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/suporte': typeof SuporteRoute
   '/amigos': typeof AppAmigosRoute
   '/home': typeof AppHomeRoute
   '/perfil': typeof AppPerfilRoute
   '/quiz': typeof AppQuizRoute
   '/ranking': typeof AppRankingRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/redefinir-senha': typeof AuthRedefinirSenhaRoute
   '/admin': typeof AdminIndexRoute
   '/caso/$id': typeof AppCasoIdRoute
   '/admin/alunos/$id': typeof AdminAlunosIdRoute
@@ -239,6 +271,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/suporte': typeof SuporteRoute
   '/_app/amigos': typeof AppAmigosRoute
   '/_app/atlas': typeof AppAtlasRouteWithChildren
   '/_app/caso': typeof AppCasoRouteWithChildren
@@ -246,7 +279,10 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/quiz': typeof AppQuizRoute
   '/_app/ranking': typeof AppRankingRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/redefinir-senha': typeof AuthRedefinirSenhaRoute
   '/admin/': typeof AdminIndexRoute
   '/_app/atlas/$region': typeof AppAtlasRegionRouteWithChildren
   '/_app/caso/$id': typeof AppCasoIdRoute
@@ -270,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/onboarding'
+    | '/suporte'
     | '/amigos'
     | '/atlas'
     | '/caso'
@@ -277,7 +314,10 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/quiz'
     | '/ranking'
+    | '/admin/integracoes'
+    | '/admin/suporte'
     | '/auth/callback'
+    | '/auth/redefinir-senha'
     | '/admin/'
     | '/atlas/$region'
     | '/caso/$id'
@@ -298,12 +338,16 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/suporte'
     | '/amigos'
     | '/home'
     | '/perfil'
     | '/quiz'
     | '/ranking'
+    | '/admin/integracoes'
+    | '/admin/suporte'
     | '/auth/callback'
+    | '/auth/redefinir-senha'
     | '/admin'
     | '/caso/$id'
     | '/admin/alunos/$id'
@@ -325,6 +369,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/onboarding'
+    | '/suporte'
     | '/_app/amigos'
     | '/_app/atlas'
     | '/_app/caso'
@@ -332,7 +377,10 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/quiz'
     | '/_app/ranking'
+    | '/admin/integracoes'
+    | '/admin/suporte'
     | '/auth/callback'
+    | '/auth/redefinir-senha'
     | '/admin/'
     | '/_app/atlas/$region'
     | '/_app/caso/$id'
@@ -356,11 +404,20 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  SuporteRoute: typeof SuporteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthRedefinirSenhaRoute: typeof AuthRedefinirSenhaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/suporte': {
+      id: '/suporte'
+      path: '/suporte'
+      fullPath: '/suporte'
+      preLoaderRoute: typeof SuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -403,12 +460,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/auth/redefinir-senha': {
+      id: '/auth/redefinir-senha'
+      path: '/auth/redefinir-senha'
+      fullPath: '/auth/redefinir-senha'
+      preLoaderRoute: typeof AuthRedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/integracoes': {
+      id: '/admin/integracoes'
+      path: '/integracoes'
+      fullPath: '/admin/integracoes'
+      preLoaderRoute: typeof AdminIntegracoesRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_app/ranking': {
       id: '/_app/ranking'
@@ -624,6 +702,8 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AdminRouteChildren {
+  AdminIntegracoesRoute: typeof AdminIntegracoesRoute
+  AdminSuporteRoute: typeof AdminSuporteRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminAlunosIdRoute: typeof AdminAlunosIdRoute
   AdminAtlasIdRoute: typeof AdminAtlasIdRoute
@@ -636,6 +716,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminIntegracoesRoute: AdminIntegracoesRoute,
+  AdminSuporteRoute: AdminSuporteRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminAlunosIdRoute: AdminAlunosIdRoute,
   AdminAtlasIdRoute: AdminAtlasIdRoute,
@@ -655,7 +737,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  SuporteRoute: SuporteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  AuthRedefinirSenhaRoute: AuthRedefinirSenhaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -9,6 +9,7 @@ import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import {
   aiDisponivel,
   gerarCasoClinico,
+  gerarEstruturaAtlas,
   gerarQuestaoQuiz,
   reformularQuestaoQuiz,
   revisarTexto,
@@ -70,6 +71,13 @@ export function useGerarCaso() {
   return useMutation({
     mutationFn: (vars: { resumo: string; regiao: string; numeroQuestoes: number }) =>
       gerarCasoClinico({ data: vars }),
+  });
+}
+
+export function useGerarEstrutura() {
+  return useMutation({
+    mutationFn: (vars: { regiao: string; nome: string; tema?: string }) =>
+      gerarEstruturaAtlas({ data: vars }),
   });
 }
 

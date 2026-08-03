@@ -1,6 +1,16 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { BookOpen, Brain, Loader2, ShieldCheck, Stethoscope, ArrowLeft, Users } from "lucide-react";
+import {
+  BookOpen,
+  Brain,
+  LifeBuoy,
+  Loader2,
+  Plug,
+  ShieldCheck,
+  Stethoscope,
+  ArrowLeft,
+  Users,
+} from "lucide-react";
 
 import { useAuth, useProfile } from "@/lib/auth";
 
@@ -64,6 +74,8 @@ function AdminLayout() {
           <Aba to="/admin/quiz" icon={Brain} label="Quiz" />
           <Aba to="/admin/casos" icon={Stethoscope} label="Casos clínicos" />
           <Aba to="/admin/atlas" icon={BookOpen} label="Atlas" />
+          <Aba to="/admin/suporte" icon={LifeBuoy} label="Suporte" />
+          <Aba to="/admin/integracoes" icon={Plug} label="Integrações" />
         </nav>
       </header>
 

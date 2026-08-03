@@ -17,6 +17,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          chave: string
+          updated_at: string
+          updated_by: string | null
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atlas_regions: {
         Row: {
           created_at: string
@@ -641,6 +670,56 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          assunto: string
+          created_at: string
+          email: string
+          id: string
+          mensagem: string
+          nome: string
+          nota_interna: string | null
+          status: Database["public"]["Enums"]["support_status"]
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assunto: string
+          created_at?: string
+          email: string
+          id?: string
+          mensagem: string
+          nome: string
+          nota_interna?: string | null
+          status?: Database["public"]["Enums"]["support_status"]
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assunto?: string
+          created_at?: string
+          email?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+          nota_interna?: string | null
+          status?: Database["public"]["Enums"]["support_status"]
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_answers: {
         Row: {
           acertou: boolean
@@ -1035,6 +1114,7 @@ export type Database = {
         | "ranking_semanal"
       point_reason: "quiz" | "caso_questao" | "caso_bonus" | "atlas"
       quiz_level: "basico" | "avancado"
+      support_status: "aberto" | "em_andamento" | "resolvido"
       user_role: "user" | "admin"
     }
     CompositeTypes: {
@@ -1176,6 +1256,7 @@ export const Constants = {
       ],
       point_reason: ["quiz", "caso_questao", "caso_bonus", "atlas"],
       quiz_level: ["basico", "avancado"],
+      support_status: ["aberto", "em_andamento", "resolvido"],
       user_role: ["user", "admin"],
     },
   },

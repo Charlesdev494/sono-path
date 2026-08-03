@@ -44,13 +44,24 @@ function Home() {
   const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
   const missoes = missoesDeHoje(progress ?? null);
 
-  const ms = [
-    { id: "quiz", label: "Quiz diário", to: "/quiz", icon: Brain },
-    { id: "caso", label: "Caso clínico", to: "/caso", icon: Stethoscope },
-    { id: "atlas", label: "Revisão anatômica", to: "/atlas", icon: BookOpen },
-  ] as const;
-
   const totalEstruturas = atlas?.reduce((n, r) => n + r.estruturas.length, 0) ?? 0;
+
+  // O Atlas era também um "Atalho" logo abaixo — a mesma porta duas vezes na
+  // mesma tela. Virou missão única, e os números do banco que davam contexto
+  // ao atalho vieram junto para não se perderem.
+  const ms = [
+    { id: "quiz", label: "Quiz diário", to: "/quiz", icon: Brain, detalhe: undefined },
+    { id: "caso", label: "Caso clínico", to: "/caso", icon: Stethoscope, detalhe: undefined },
+    {
+      id: "atlas",
+      label: "Atlas de Sonoanatomia",
+      to: "/atlas",
+      icon: BookOpen,
+      detalhe: atlas?.length
+        ? `${atlas.length} regiões · ${totalEstruturas} estruturas`
+        : undefined,
+    },
+  ] as const;
 
   return (
     <div className="flex flex-col gap-5 px-5 pt-8">
@@ -138,7 +149,7 @@ function Home() {
                 <div className="flex-1">
                   <p className="font-medium">{m.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {done ? "Concluído" : "Toque para começar"}
+                    {done ? "Concluído" : (m.detalhe ?? "Toque para começar")}
                   </p>
                 </div>
                 <ChevronRight className="size-5 text-muted-foreground" />
@@ -148,23 +159,12 @@ function Home() {
         </div>
       </section>
 
-      {/* Quick access atlas */}
-      <section>
-        <h2 className="mb-3 font-display text-lg font-semibold">Atalhos</h2>
-        <Link to="/atlas" className="flex items-center gap-3 rounded-xl border bg-card p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-            <BookOpen className="size-5" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium">Atlas de Sonoanatomia</p>
-            <p className="text-xs text-muted-foreground">
-              {/* números vindos do banco, não mais chumbados no texto */}
-              {atlas?.length ?? 0} regiões · {totalEstruturas} estruturas
-            </p>
-          </div>
-          <ChevronRight className="size-5 text-muted-foreground" />
-        </Link>
-      </section>
+      <Link
+        to="/suporte"
+        className="pb-2 text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Ajuda e suporte
+      </Link>
     </div>
   );
 }

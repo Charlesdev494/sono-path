@@ -60,6 +60,26 @@ function Login() {
     }
   }
 
+  async function recuperarSenha() {
+    setErro(null);
+    setAviso(null);
+    if (!email) {
+      setErro("Digite seu e-mail acima para receber o link de recuperação.");
+      return;
+    }
+    setEnviando(true);
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/redefinir-senha`,
+    });
+    setEnviando(false);
+    if (error) {
+      setErro(traduzirErro(error.message));
+      return;
+    }
+    setAviso("Se houver uma conta com este e-mail, enviamos um link para redefinir a senha.");
+  }
+
   async function comProvedor(provider: "google" | "apple") {
     setErro(null);
     const supabase = getSupabaseBrowserClient();
@@ -111,7 +131,19 @@ function Login() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="senha">Senha</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="senha">Senha</Label>
+              {modo === "entrar" && (
+                <button
+                  type="button"
+                  onClick={recuperarSenha}
+                  disabled={enviando}
+                  className="text-xs font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  Esqueci minha senha
+                </button>
+              )}
+            </div>
             <Input
               id="senha"
               type="password"

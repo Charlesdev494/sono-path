@@ -67,6 +67,9 @@ export type AtlasStructure = {
   id: string;
   slug: string;
   nome: string;
+  // O aluno só recebe 'publicado' (a RLS cuida disso); no painel o campo
+  // distingue o que já está no ar do que ainda é rascunho.
+  status: "rascunho" | "publicado";
   resumo: string;
   anatomia: string;
   sonoanatomia: string;
@@ -85,6 +88,8 @@ export type AtlasRegion = {
   nome: string;
   icone: string;
   descricao: string;
+  status: "rascunho" | "publicado";
+  ordem: number;
   estruturas: AtlasStructure[];
 };
 
@@ -143,6 +148,7 @@ function mapEstrutura(row: EstruturaRow): AtlasStructure {
     id: row.id,
     slug: row.slug,
     nome: row.nome,
+    status: row.status,
     resumo: row.resumo,
     anatomia: row.anatomia,
     sonoanatomia: row.sonoanatomia,
@@ -200,6 +206,8 @@ export const atlasQueryOptions = () =>
         nome: r.nome,
         icone: r.icone,
         descricao: r.descricao,
+        status: r.status,
+        ordem: r.ordem,
         estruturas: [...r.atlas_structures].sort((a, b) => a.ordem - b.ordem).map(mapEstrutura),
       }));
     },
