@@ -13,10 +13,12 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      # Assinatura automática: o Codemagic usa a chave que você já conectou em
-      # Settings > Integrations > Developer Portal para criar e renovar o
-      # certificado de distribuição e o provisioning profile.
-      app_store_connect: codemagic
+      # Este valor é o NOME da chave cadastrada no Codemagic em
+      # Teams > Integrations > Developer Portal > Manage keys — não o nome que
+      # ela tem do lado da Apple, e é sensível a maiúscula. Nome diferente dá
+      # "App Store Connect integration ... does not exist" antes de qualquer
+      # etapa rodar.
+      app_store_connect: Codemagic
 
     environment:
       node: 22
