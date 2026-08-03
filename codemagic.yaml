@@ -104,10 +104,9 @@ workflows:
       - name: Ajustar Info.plist
         script: sh scripts/patch-ios.sh
 
-      - name: Instalar pods
-        script: |
-          cd ios/App
-          pod install
+      # Sem etapa de CocoaPods: o Capacitor 8 gera o projeto iOS a partir do
+      # ios-spm-template, que usa Swift Package Manager. Não existe Podfile, e o
+      # Xcode resolve os pacotes sozinho durante a compilação.
 
       - name: Número da build
         # A Apple recusa duas builds com o mesmo número. O contador do Codemagic
@@ -117,10 +116,13 @@ workflows:
           agvtool new-version -all "$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))"
 
       - name: Compilar e assinar o .ipa
+        # --project, e não --workspace: o template SPM não gera
+        # App.xcworkspace, só App.xcodeproj (o .xcworkspace que existe lá dentro
+        # é o interno do Xcode, não um workspace de CocoaPods).
         script: |
           xcode-project use-profiles
           xcode-project build-ipa \
-            --workspace "ios/App/App.xcworkspace" \
+            --project "ios/App/App.xcodeproj" \
             --scheme "App"
 
     artifacts:
