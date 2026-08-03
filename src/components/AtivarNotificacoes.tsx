@@ -3,6 +3,7 @@ import { Bell, BellOff, Loader2, Share, SquarePlus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MOSTRAR_WEB_PUSH } from "@/lib/nativo";
 import {
   ativarNotificacoes,
   estaInstalado,
@@ -58,6 +59,9 @@ export function AtivarNotificacoes() {
 
   // Nada de chave no servidor = nada a oferecer (a menos que seja o aviso do
   // iOS, que independe do servidor).
+  // Dentro do app empacotado o Web Push não funciona (WKWebView). Pedir a
+  // permissão ali só geraria um convite que nunca entrega nada.
+  if (!MOSTRAR_WEB_PUSH) return null;
   if (!precisaInstalarIOS && !disp?.habilitado) return null;
   if (fechado) return null;
 

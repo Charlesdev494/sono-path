@@ -16,10 +16,16 @@
     "make-admin": "node --env-file-if-exists=.env scripts/make-admin.mjs",
     "test:social": "node --env-file-if-exists=.env scripts/test-social.mjs",
     "icons": "node scripts/gen-icons.mjs",
-    "test:push": "node --env-file-if-exists=.env scripts/test-push.mjs"
+    "test:push": "node --env-file-if-exists=.env scripts/test-push.mjs",
+    "assets:nativos": "node scripts/gen-assets-nativos.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -78,6 +84,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.7.0",
     "@types/node": "^22.16.5",

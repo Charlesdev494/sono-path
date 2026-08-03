@@ -1,0 +1,106 @@
+# Compilação do app iOS numa máquina macOS do Codemagic.
+#
+# A pasta ios/ não fica no repositório de propósito: ela é 100% gerada pelo
+# Capacitor e depende de CocoaPods, que não roda no Windows. Recriar a cada
+# build mantém o repositório limpo e evita commitar um projeto Xcode
+# meio-gerado. Os ajustes que o "cap add" apagaria vivem em
+# scripts/patch-ios.sh, que roda sempre depois.
+
+workflows:
+  ios-appstore:
+    name: US360 · iOS · App Store
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    integrations:
+      # Assinatura automática: o Codemagic usa a chave que você já conectou em
+      # Settings > Integrations > Developer Portal para criar e renovar o
+      # certificado de distribuição e o provisioning profile.
+      app_store_connect: codemagic
+
+    environment:
+      node: 22
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.drcharles.sonopath"
+        # Precisa bater com o "ID Apple" do app no App Store Connect.
+        APP_STORE_APPLE_ID: 6797540534
+        # Backend das server functions dentro do app (suporte, IA).
+        NATIVE_API_URL: "https://sono-path.vercel.app"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.drcharles.sonopath
+
+    triggering:
+      # Só a main, e sem disparar em pull request: o repositório é público, e um
+      # PR de fork não pode ter acesso às credenciais de publicação.
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+
+    scripts:
+      - name: Instalar dependências
+        script: npm ci
+
+      - name: Build web em modo nativo (SPA)
+        # NATIVE=1 gera dist/client/index.html e aponta as server functions
+        # para a Vercel. Sem isso não existe nada para o Capacitor empacotar.
+        script: NATIVE=1 NATIVE_API_URL="$NATIVE_API_URL" npm run build
+
+      - name: Conferir que o shell foi gerado
+        # Falhar aqui, com mensagem clara, é muito melhor do que descobrir lá
+        # na frente com um erro obscuro do Xcode sobre arquivo ausente.
+        script: |
+          test -f dist/client/index.html || {
+            echo "dist/client/index.html não existe — o build SPA não rodou."
+            exit 1
+          }
+
+      - name: Gerar ícone e splash
+        script: |
+          npm run assets:nativos
+          npx capacitor-assets generate --ios
+
+      - name: Criar projeto iOS
+        script: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Ajustar Info.plist
+        script: sh scripts/patch-ios.sh
+
+      - name: Instalar pods
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Número da build
+        # A Apple recusa duas builds com o mesmo número. O contador do Codemagic
+        # resolve isso sem ninguém ter de lembrar de incrementar nada.
+        script: |
+          cd ios/App
+          agvtool new-version -all "$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))"
+
+      - name: Compilar e assinar o .ipa
+        script: |
+          xcode-project use-profiles
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Sobe para o TestFlight, não para a revisão. Você confere no aparelho
+        # antes de enviar para a Apple — e a compilação já aparece na tela de
+        # versão do App Store Connect.
+        submit_to_testflight: false
+        submit_to_app_store: false

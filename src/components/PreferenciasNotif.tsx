@@ -9,6 +9,7 @@ import { usePreferenciaNotif, type PrefNotif } from "@/lib/data/social";
 import { ControleNotificacoes } from "@/components/AtivarNotificacoes";
 import { ativarNotificacoes, desativarNotificacoes, suportaPush } from "@/lib/data/push";
 import { enviarPushDeTeste } from "@/lib/api/push.functions";
+import { MOSTRAR_WEB_PUSH } from "@/lib/nativo";
 
 const TIPOS: { campo: PrefNotif; titulo: string; descricao: string }[] = [
   {
@@ -108,6 +109,8 @@ function InterruptorGeral({
   // refletir a mudança sem recarregar.
   const [permLocal, setPermLocal] = useState(permissao);
 
+  // Sem Web Push dentro do app, nao ha preferencia de push para ajustar.
+  if (!MOSTRAR_WEB_PUSH) return null;
   if (!suportado) {
     return (
       <p className="text-xs text-muted-foreground">

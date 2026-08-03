@@ -3,6 +3,7 @@ import { Download, Share, SquarePlus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MOSTRAR_INSTALAR_PWA } from "@/lib/nativo";
 
 // O evento que o Chrome dispara quando o app é instalável. Não está nos tipos
 // padrão do DOM porque não é padrão — só Chromium implementa.
@@ -90,6 +91,8 @@ export function InstalarApp() {
     setEvento(null);
   }
 
+  // No app das lojas ja esta instalado: o convite nao faria sentido.
+  if (!MOSTRAR_INSTALAR_PWA) return null;
   if (fechado || (!evento && !mostrarIOS)) return null;
 
   return (
