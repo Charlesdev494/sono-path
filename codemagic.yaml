@@ -21,7 +21,11 @@ workflows:
       app_store_connect: US360
 
     environment:
-      node: 22
+      # Tem de acompanhar a versão que gerou o package-lock.json (Node 24 /
+      # npm 11). Com Node 22 o npm 10 resolve as dependências de outro jeito e
+      # recusa o lock: "Missing: lru-cache@11.5.2 from lock file". O arquivo não
+      # está errado — é a versão do npm que discorda.
+      node: 24
       xcode: latest
       cocoapods: default
       vars:
