@@ -31,10 +31,19 @@ workflows:
         # Backend das server functions dentro do app (suporte, IA).
         NATIVE_API_URL: "https://sono-path.vercel.app"
 
-    # Sem bloco ios_signing aqui de propósito. Ele só BUSCA um provisioning
-    # profile existente e falha com "No matching profiles found" quando não há
-    # nenhum — que é sempre o caso na primeira compilação de um app. A criação
-    # é feita na etapa "Preparar assinatura", com --create.
+      # Assinatura gerenciada pelo Codemagic: ele cria o certificado de
+      # distribuição e o provisioning profile a partir da integração acima, e
+      # guarda a chave privada do certificado por conta própria.
+      #
+      # Tentei antes fazer isso na mão com "app-store-connect
+      # fetch-signing-files --create" e esbarrei em "Cannot save Signing
+      # Certificates without certificate private key": o comando cria o
+      # certificado na Apple, mas o .p12 precisa de uma chave privada que só
+      # existe se alguém a gerar e guardar como segredo. O modo gerenciado
+      # resolve isso sozinho.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.drcharles.sonopath
 
     triggering:
       # Só a main, e sem disparar em pull request: o repositório é público, e um
@@ -47,21 +56,6 @@ workflows:
           source: true
 
     scripts:
-      - name: Preparar assinatura
-        # --create é a diferença: na primeira compilação não existe certificado
-        # de distribuição nem provisioning profile para este bundle, e sem a
-        # flag o comando falha em vez de criá-los.
-        #
-        # Roda antes de tudo porque é o passo que mais falha: melhor descobrir
-        # problema de credencial em 30 segundos do que depois de 10 minutos
-        # compilando.
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
-
       - name: Instalar dependências
         script: npm ci
 
