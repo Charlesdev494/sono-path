@@ -36,6 +36,11 @@ workflows:
         NATIVE_API_URL: "https://sono-path.vercel.app"
       groups:
         - ios_signing
+        # VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY. São lidas por
+        # import.meta.env em tempo de BUILD e ficam gravadas dentro do bundle —
+        # não adianta configurá-las depois. Sem elas o app compila normalmente
+        # e só quebra ao abrir no aparelho, na tela de erro genérica.
+        - supabase
 
     # Sem bloco ios_signing: verificado na prática que ele apenas BUSCA um
     # provisioning profile existente e falha com "No matching profiles found"
@@ -90,6 +95,19 @@ workflows:
             echo "dist/client/index.html não existe — o build SPA não rodou."
             exit 1
           }
+
+      - name: Conferir que o Supabase entrou no bundle
+        # A primeira compilação subiu para o TestFlight sem as variáveis do
+        # Supabase e abria direto na tela de erro: o build passa, o app quebra
+        # só no aparelho. Esta trava transforma isso em falha de build.
+        script: |
+          if ! grep -rqs "supabase.co" dist/client/assets/*.js; then
+            echo "A URL do Supabase não está no bundle."
+            echo "Cadastre VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no grupo"
+            echo "de variáveis 'supabase' — elas são lidas em tempo de build."
+            exit 1
+          fi
+          echo "Supabase presente no bundle."
 
       - name: Gerar ícone e splash
         script: |
