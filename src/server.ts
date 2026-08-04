@@ -88,16 +88,36 @@ const ORIGENS_DO_APP = new Set([
   "http://localhost", // Android
 ]);
 
-function cabecalhosCORS(origin: string) {
+// O cliente do TanStack manda x-tsr-serverFn em TODA chamada de server function,
+// e esse nome não é da lista segura do CORS: se ele não estiver aqui, o
+// navegador cancela a requisição no preflight e nada chega ao servidor. Foi o
+// que deixava Integrações quebrada no app mesmo depois do CORS existir — a
+// lista tinha só content-type e authorization.
+//
+// Echoamos o que o navegador pediu em vez de manter uma lista fixa, para que um
+// header novo do framework não volte a derrubar tudo em silêncio.
+const HEADERS_PADRAO = "content-type, authorization, x-tsr-serverfn, accept";
+
+// O cliente decide como ler a resposta olhando estes dois. Numa resposta de
+// outra origem, header não listado aqui simplesmente não existe para o
+// JavaScript: sem isto o x-tss-serialized some, a desserialização é pulada e a
+// tela recebe o formato cru do fio em vez do objeto.
+const HEADERS_EXPOSTOS = "x-tss-serialized, x-tss-raw";
+
+function cabecalhosCORS(origin: string, request?: Request) {
   return {
     "Access-Control-Allow-Origin": origin,
     // Necessário para o cookie de sessão e o header Authorization irem junto.
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "content-type, authorization",
+    "Access-Control-Allow-Headers":
+      request?.headers.get("access-control-request-headers") ?? HEADERS_PADRAO,
+    "Access-Control-Expose-Headers": HEADERS_EXPOSTOS,
+    // Evita um preflight por chamada; o app faz várias em sequência.
+    "Access-Control-Max-Age": "86400",
     // Sem isto, um cache intermediário pode servir a resposta de uma origem
     // para outra.
-    Vary: "Origin",
+    Vary: "Origin, Access-Control-Request-Headers",
   };
 }
 
@@ -110,7 +130,7 @@ export default {
     // O preflight não chega a nenhum handler: precisa ser respondido aqui, ou
     // o navegador cancela a requisição de verdade que viria em seguida.
     if (doApp && request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: cabecalhosCORS(origin) });
+      return new Response(null, { status: 204, headers: cabecalhosCORS(origin, request) });
     }
 
     if (url.pathname === "/api/cron/notificacoes") {
