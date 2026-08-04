@@ -38,9 +38,16 @@ const PROVEDORES: { id: Provedor; nome: string; onde: string; prefixo: string }[
 
 function AdminIntegracoes() {
   const qc = useQueryClient();
-  const { data: config, isLoading } = useQuery({
+  const {
+    data: config,
+    isLoading,
+    error: erroCarregar,
+  } = useQuery({
     queryKey: ["admin", "config-ia"],
     queryFn: () => obterConfigIA(),
+    // Não insistir: se a sessão não é aceita, tentar de novo não muda nada e
+    // ainda demora para a mensagem aparecer.
+    retry: false,
   });
 
   const [provedor, setProvedor] = useState<Provedor>("openai");
@@ -101,6 +108,30 @@ function AdminIntegracoes() {
   }
 
   const escolhido = PROVEDORES.find((p) => p.id === provedor)!;
+
+  // Falha ao carregar precisa parecer falha. Antes a tela renderizava com os
+  // dados vazios e dizia "Inativo" — indistinguível de "não há chave
+  // configurada", o que mandava a pessoa cadastrar de novo uma chave que já
+  // estava lá.
+  if (erroCarregar) {
+    return (
+      <div className="flex max-w-2xl flex-col gap-4">
+        <header>
+          <h1 className="font-display text-xl font-bold">Integrações</h1>
+        </header>
+        <Card className="flex flex-col gap-2 border-destructive/40 bg-destructive/5 p-5">
+          <div className="flex items-center gap-2 text-destructive">
+            <TriangleAlert className="size-5" />
+            <p className="font-medium">Não foi possível carregar a configuração.</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {traduzir(erroCarregar)} Isto não significa que a chave foi perdida — ela continua
+            guardada no servidor. Saia e entre de novo, e se persistir, abra pelo navegador.
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
