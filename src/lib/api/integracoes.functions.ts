@@ -14,31 +14,11 @@ import { z } from "zod";
 
 import { testarChave } from "../ai/chamar.server";
 import { CHAVE_CONFIG_IA, getAIConfig, mascararChave, modeloPadraoDe } from "../ai/config.server";
+import { exigirAdmin } from "./admin.server";
 import { getServiceClient } from "../push/config.server";
 import type { Json } from "../supabase/database.types";
-import { getSupabaseServerClient } from "../supabase/server";
 
 const provedorSchema = z.enum(["openai", "anthropic"]);
-
-/**
- * Confere que quem está chamando é admin de verdade, pela sessão — não por
- * algo que o navegador tenha mandado junto.
- */
-async function exigirAdmin() {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("NAO_AUTENTICADO");
-
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (perfil?.role !== "admin") throw new Error("NAO_AUTORIZADO");
-  return user.id;
-}
 
 export const obterConfigIA = createServerFn({ method: "GET" }).handler(async () => {
   await exigirAdmin();

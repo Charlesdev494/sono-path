@@ -12,6 +12,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod/v4";
 
 import { chamarIA } from "../ai/chamar.server";
+import { exigirAdmin } from "./admin.server";
 import { getAIConfig } from "../ai/config.server";
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,7 @@ export const gerarQuestaoQuiz = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    await exigirAdmin();
     const nivelTexto =
       data.nivel === "avancado"
         ? "Nível avançado: exija raciocínio clínico, não apenas memorização — armadilhas técnicas, decisões de conduta, achados sutis."
@@ -125,6 +127,7 @@ export const reformularQuestaoQuiz = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    await exigirAdmin();
     const alternativasTexto = data.alternativas
       .map((a) => `${a.letra}) ${a.texto}${a.letra === data.correta ? "  [correta]" : ""}`)
       .join("\n");
@@ -162,6 +165,7 @@ export const gerarCasoClinico = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    await exigirAdmin();
     const caso = await chamarIA({
       schema: casoSchema,
       prompt: `Monte um caso clínico completo a partir deste resumo:
@@ -191,6 +195,7 @@ export const revisarTexto = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    await exigirAdmin();
     const revisao = await chamarIA({
       schema: revisaoSchema,
       prompt: `Revise este texto (${data.tipo}) de material médico:
@@ -222,6 +227,7 @@ export const gerarEstruturaAtlas = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    await exigirAdmin();
     const estrutura = await chamarIA({
       schema: estruturaSchema,
       prompt: `Escreva a ficha de Atlas de sonoanatomia da estrutura "${data.nome}", da região ${data.regiao}.
