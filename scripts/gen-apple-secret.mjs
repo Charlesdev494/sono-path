@@ -30,7 +30,9 @@ const P8 = arg("p8");
 const KEY_ID = arg("kid");
 const TEAM_ID = arg("team", "75W4LAAFHK");
 // O 'sub' é o client_id do fluxo OAuth — o Services ID, não o bundle do app.
-const CLIENT_ID = arg("client", "com.drcharles.sonopath.web");
+// Não pode começar com o App ID (com.drcharles.sonopath): a Apple reserva
+// esse prefixo e recusa o registro com "identifier is not available".
+const CLIENT_ID = arg("client", "com.drcharles.us360.web");
 const SAIDA = arg("out", "apple-client-secret.txt");
 
 const b64url = (buf) =>
