@@ -48,6 +48,15 @@ ENTITLEMENTS="ios/App/App/App.entitlements"
 # APNs de produção. "development" só vale para app instalado pelo Xcode — usar
 # o valor errado faz o token ser recusado com BadDeviceToken, sem pista do que
 # está errado.
+#
+# com.apple.developer.game-center acompanha a capability ligada no App ID. São
+# dois lados: o App ID autoriza, o binário declara. Ligar só no portal faz a
+# App Store Connect recusar o envio com "adicione a chave
+# com.apple.developer.game-center no Xcode" — que era o caso aqui, e não dava
+# para resolver no Xcode porque a pasta ios/ é gerada a cada build.
+#
+# O entitlement não cria funcionalidade: placar e conquista nativos exigiriam
+# GameKit. Hoje o ranking e as conquistas do US360 vivem no Supabase.
 cat > "$ENTITLEMENTS" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -59,6 +68,8 @@ cat > "$ENTITLEMENTS" <<'PLIST'
   </array>
   <key>aps-environment</key>
   <string>production</string>
+  <key>com.apple.developer.game-center</key>
+  <true/>
 </dict>
 </plist>
 PLIST
@@ -82,4 +93,27 @@ if [ "$N" -lt 1 ]; then
   echo "Não consegui inserir CODE_SIGN_ENTITLEMENTS no projeto Xcode."
   exit 1
 fi
-echo "Entitlement de Sign in with Apple aplicado em $N configuração(ões)."
+echo "Entitlements aplicados em $N configuração(ões)."
+
+# ---------------------------------------------------------------------------
+# Só iPhone
+# ---------------------------------------------------------------------------
+# O template do Capacitor vem com "1,2" (iPhone + iPad). Declarar iPad faz a
+# App Store Connect exigir capturas de tela de 13" para aceitar o envio — e o
+# revisor abrir o app num iPad, onde o layout nunca foi conferido.
+#
+# Voltar a ser universal é trocar este valor por "1,2" de novo, depois de
+# testar as telas em tela grande.
+sed -i '' 's|TARGETED_DEVICE_FAMILY = "1,2";|TARGETED_DEVICE_FAMILY = "1";|g' "$PBXPROJ"
+
+# Se o template mudar o formato desta linha, o sed passa batido em silêncio e o
+# app volta a ser universal sem ninguém perceber — até a Apple cobrar o print
+# de iPad de novo. Por isso a conferência é uma falha de build.
+FAMILIA=$(grep -c 'TARGETED_DEVICE_FAMILY = "1";' "$PBXPROJ" || true)
+SOBROU=$(grep -c 'TARGETED_DEVICE_FAMILY = "1,2";' "$PBXPROJ" || true)
+if [ "$FAMILIA" -lt 1 ] || [ "$SOBROU" -gt 0 ]; then
+  echo "TARGETED_DEVICE_FAMILY não ficou em iPhone-only."
+  echo "Encontrado: $FAMILIA em \"1\", $SOBROU ainda em \"1,2\"."
+  exit 1
+fi
+echo "App marcado como iPhone-only em $FAMILIA configuração(ões)."
