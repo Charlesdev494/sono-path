@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronRight, Loader2, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronRight, Loader2, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { StatusBadge } from "./admin.quiz.index";
-import { atlasQueryOptions } from "@/lib/data/content";
+import { atlasQueryOptions, type AtlasRegion } from "@/lib/data/content";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { gerarSlug } from "@/lib/utils";
 
@@ -29,6 +46,11 @@ function AdminAtlasList() {
   const { data: atlas, isLoading } = useQuery(atlasQueryOptions());
   const [novaRegiao, setNovaRegiao] = useState(false);
   const [novaEstruturaEm, setNovaEstruturaEm] = useState<string | null>(null);
+  // Os dois diálogos moram aqui, e não dentro do menu de cada card: item de
+  // menu fecha o menu ao ser clicado, e o diálogo que estivesse dentro dele
+  // desmontaria junto, antes de aparecer.
+  const [editando, setEditando] = useState<AtlasRegion | null>(null);
+  const [excluindo, setExcluindo] = useState<AtlasRegion | null>(null);
 
   if (isLoading) {
     return (
@@ -70,17 +92,27 @@ function AdminAtlasList() {
                 <Badge variant="outline" className="text-[10px]">
                   {r.estruturas.length} estruturas
                 </Badge>
-                <BotaoPublicarRegiao id={r.id} status={r.status} />
+                <MenuRegiao
+                  regiao={r}
+                  onEditar={() => setEditando(r)}
+                  onExcluir={() => setExcluindo(r)}
+                />
               </div>
             </div>
 
             <div className="grid gap-1.5 sm:grid-cols-2">
               {r.estruturas.map((e) => (
+                // min-w-0 no PRÓPRIO item do grid, não só no filho. Item de grid
+                // nasce com min-width:auto, e como o nome está em truncate
+                // (white-space:nowrap) a largura mínima do item vira o texto
+                // inteiro: o truncate nunca chega a agir e a página fica mais
+                // larga que a tela. Era isso que empurrava o Atlas para o lado
+                // no celular, cortando o título e o cabeçalho.
                 <Link
                   key={e.id}
                   to="/admin/atlas/$id"
                   params={{ id: e.id }}
-                  className="flex items-center justify-between gap-2 rounded-md border p-2.5 text-sm transition-colors hover:bg-accent"
+                  className="flex min-w-0 items-center justify-between gap-2 rounded-md border p-2.5 text-sm transition-colors hover:bg-accent"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{e.nome}</p>
@@ -112,39 +144,262 @@ function AdminAtlasList() {
         proximaOrdem={(atlas?.length ?? 0) + 1}
       />
       <DialogNovaEstrutura regiao={regiao ?? null} onFechar={() => setNovaEstruturaEm(null)} />
+      <DialogEditarRegiao regiao={editando} onFechar={() => setEditando(null)} />
+      <DialogExcluirRegiao regiao={excluindo} onFechar={() => setExcluindo(null)} />
     </div>
   );
 }
 
 /**
- * Sem isto, uma região criada aqui nasceria rascunho e não teria como sair
- * disso — o aluno nunca a veria, por mais estrutura que tivesse dentro.
+ * Publicar, corrigir e excluir cabem num menu, não na linha do card: no
+ * celular os três lado a lado passavam da largura da tela.
  */
-function BotaoPublicarRegiao({ id, status }: { id: string; status: "rascunho" | "publicado" }) {
+function MenuRegiao({
+  regiao,
+  onEditar,
+  onExcluir,
+}: {
+  regiao: AtlasRegion;
+  onEditar: () => void;
+  onExcluir: () => void;
+}) {
   const qc = useQueryClient();
+  // Sem isto, uma região criada aqui nasceria rascunho e não teria como sair
+  // disso — o aluno nunca a veria, por mais estrutura que tivesse dentro.
   const alternar = useMutation({
     mutationFn: async () => {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase
         .from("atlas_regions")
-        .update({ status: status === "publicado" ? "rascunho" : "publicado" })
-        .eq("id", id);
+        .update({ status: regiao.status === "publicado" ? "rascunho" : "publicado" })
+        .eq("id", regiao.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atlas"] }),
   });
 
   return (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="text-xs"
-      onClick={() => alternar.mutate()}
-      disabled={alternar.isPending}
-    >
-      {alternar.isPending && <Loader2 className="mr-1.5 size-3 animate-spin" />}
-      {status === "publicado" ? "Tirar do ar" : "Publicar"}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-8"
+          aria-label={`Ações de ${regiao.nome}`}
+        >
+          {alternar.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <MoreVertical className="size-4" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => alternar.mutate()}>
+          {regiao.status === "publicado" ? "Tirar do ar" : "Publicar"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onEditar}>
+          <Pencil className="mr-2 size-4" />
+          Corrigir nome, ícone e descrição
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onExcluir} className="text-destructive focus:text-destructive">
+          <Trash2 className="mr-2 size-4" />
+          Excluir região
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
+ * Corrigir vem antes de excluir de propósito. Um erro de digitação no nome de
+ * uma região não pode custar as estruturas de dentro dela — que é o que
+ * aconteceria se o único conserto fosse apagar e criar de novo.
+ */
+function DialogEditarRegiao({
+  regiao,
+  onFechar,
+}: {
+  regiao: AtlasRegion | null;
+  onFechar: () => void;
+}) {
+  const qc = useQueryClient();
+  const [nome, setNome] = useState("");
+  const [icone, setIcone] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+
+  // Reabrir o diálogo em outra região precisa recarregar os campos; sem isto
+  // ficariam os valores da região anterior.
+  useEffect(() => {
+    if (!regiao) return;
+    setNome(regiao.nome);
+    setIcone(regiao.icone);
+    setDescricao(regiao.descricao);
+    setErro(null);
+  }, [regiao]);
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      if (!regiao) throw new Error("sem região");
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase
+        .from("atlas_regions")
+        .update({
+          nome: nome.trim(),
+          icone: icone.trim(),
+          descricao: descricao.trim(),
+          // O slug acompanha o nome: corrigir a digitação tem de corrigir
+          // também o endereço público, senão o erro fica visível na URL para
+          // sempre. O diálogo mostra o endereço resultante para que a troca
+          // não seja silenciosa.
+          slug: gerarSlug(nome),
+        })
+        .eq("id", regiao.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["atlas"] });
+      setErro(null);
+      onFechar();
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErro(
+        msg.includes("duplicate") || msg.includes("unique")
+          ? "Já existe outra região com esse nome."
+          : "Não foi possível salvar. " + msg,
+      );
+    },
+  });
+
+  return (
+    <Dialog open={Boolean(regiao)} onOpenChange={(v) => !v && onFechar()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Corrigir região</DialogTitle>
+          <DialogDescription>
+            As estruturas de dentro não são tocadas. Só o que aparece na lista e o endereço.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="editar-nome">Nome</Label>
+            <Input
+              id="editar-nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              autoFocus
+            />
+            {nome.trim() && (
+              <p className="text-xs text-muted-foreground">Endereço: /atlas/{gerarSlug(nome)}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="editar-icone">Ícone</Label>
+            <Input
+              id="editar-icone"
+              value={icone}
+              onChange={(e) => setIcone(e.target.value)}
+              placeholder="Um emoji, ex: 🤚"
+              className="w-24"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="editar-descricao">Descrição</Label>
+            <Input
+              id="editar-descricao"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Uma linha que aparece embaixo do nome"
+            />
+          </div>
+          {erro && (
+            <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {erro}
+            </p>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onFechar}>
+            Cancelar
+          </Button>
+          <Button onClick={() => salvar.mutate()} disabled={!nome.trim() || salvar.isPending}>
+            {salvar.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DialogExcluirRegiao({
+  regiao,
+  onFechar,
+}: {
+  regiao: AtlasRegion | null;
+  onFechar: () => void;
+}) {
+  const qc = useQueryClient();
+  const [erro, setErro] = useState<string | null>(null);
+
+  const excluir = useMutation({
+    mutationFn: async () => {
+      if (!regiao) throw new Error("sem região");
+      const supabase = getSupabaseBrowserClient();
+      // As estruturas caem por cascade (FK on delete cascade). É por isso que a
+      // contagem aparece na pergunta: quem apaga precisa ver o que vai junto.
+      const { error } = await supabase.from("atlas_regions").delete().eq("id", regiao.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["atlas"] });
+      setErro(null);
+      onFechar();
+    },
+    onError: (e: unknown) => setErro(e instanceof Error ? e.message : String(e)),
+  });
+
+  const quantas = regiao?.estruturas.length ?? 0;
+
+  return (
+    <AlertDialog open={Boolean(regiao)} onOpenChange={(v) => !v && onFechar()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir {regiao?.nome}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {quantas > 0
+              ? `As ${quantas} estruturas dentro desta região serão apagadas junto, com os textos e as imagens. Não há como desfazer.`
+              : "A região está vazia. Não há como desfazer."}{" "}
+            Se o problema for só o nome, use "Corrigir" — nada se perde.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {erro && (
+          <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            Não foi possível excluir. {erro}
+          </p>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              // Sem isto o AlertDialog fecha sozinho no clique e o erro, se
+              // houver, não teria onde aparecer.
+              e.preventDefault();
+              excluir.mutate();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {excluir.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+            Excluir definitivamente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

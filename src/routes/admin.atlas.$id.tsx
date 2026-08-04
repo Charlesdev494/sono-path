@@ -1,11 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ChevronLeft, Plus, Trash2, Check, Loader2 } from "lucide-react";
 
 import { CampoImagem } from "@/components/admin/CampoImagem";
@@ -76,6 +87,21 @@ function AdminAtlasEditor() {
     setForm((f) => ({ ...f, [k]: v }));
     setSalvo(false);
   };
+
+  const excluir = useMutation({
+    mutationFn: async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase.from("atlas_structures").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["atlas"] });
+      qc.invalidateQueries({ queryKey: ["admin", "atlas"] });
+      navigate({ to: "/admin/atlas" });
+    },
+    onError: (e: unknown) =>
+      setErro("Não foi possível excluir. " + (e instanceof Error ? e.message : String(e))),
+  });
 
   async function gravar(novoStatus?: "rascunho" | "publicado") {
     if (!form.nome.trim()) {
@@ -292,6 +318,35 @@ function AdminAtlasEditor() {
             Salvar e publicar
           </Button>
         )}
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" className="text-destructive hover:text-destructive">
+              <Trash2 className="mr-1.5 size-4" />
+              Excluir estrutura
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir {estrutura.nome}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                A ficha inteira e as {form.imagens.length} imagens serão apagadas. Não há como
+                desfazer. Se o problema for só o nome, corrija no campo "Nome da estrutura" e salve
+                — nada se perde. Para só tirá-la do ar, use "Tirar do ar".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => excluir.mutate()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {excluir.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+                Excluir definitivamente
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
