@@ -57,6 +57,39 @@ export const inscreverPush = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Registra o aparelho iOS do app empacotado.
+ *
+ * Separada de inscreverPush porque o formato é outro: o APNs identifica o
+ * aparelho por um token e não tem par de chaves — quem cifra é a Apple. O
+ * banco guarda o token na mesma coluna 'endpoint', com tipo 'apns'.
+ */
+export const registrarAparelhoAPNs = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ token: z.string().min(32).max(200) }))
+  .handler(async ({ data }) => {
+    const supabase = await getSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("não autenticado");
+
+    // upsert por endpoint: reinstalar o app gera token novo, mas reabrir não —
+    // sem isto, cada abertura criaria uma linha e a pessoa receberia repetido.
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        user_id: user.id,
+        endpoint: data.token,
+        tipo: "apns",
+        p256dh: null,
+        auth: null,
+        invalida_em: null,
+      },
+      { onConflict: "endpoint" },
+    );
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const desinscreverPush = createServerFn({ method: "POST" })
   .inputValidator(z.object({ endpoint: z.string() }))
   .handler(async ({ data }) => {

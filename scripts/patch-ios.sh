@@ -44,6 +44,10 @@ echo "Info.plist ajustado:"
 # que falta é o binário declarar que usa.
 ENTITLEMENTS="ios/App/App/App.entitlements"
 
+# aps-environment=production: builds do TestFlight e da App Store falam com o
+# APNs de produção. "development" só vale para app instalado pelo Xcode — usar
+# o valor errado faz o token ser recusado com BadDeviceToken, sem pista do que
+# está errado.
 cat > "$ENTITLEMENTS" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -53,6 +57,8 @@ cat > "$ENTITLEMENTS" <<'PLIST'
   <array>
     <string>Default</string>
   </array>
+  <key>aps-environment</key>
+  <string>production</string>
 </dict>
 </plist>
 PLIST

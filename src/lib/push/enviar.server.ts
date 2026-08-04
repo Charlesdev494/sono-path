@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { enviarAPNs, getAPNsConfig } from "./apns.server";
 import { getPushConfig, getServiceClient } from "./config.server";
 import type { Database } from "../supabase/database.types";
 
@@ -33,7 +34,10 @@ export async function enviarPara(
   notif: Notificacao,
 ): Promise<{ entregues: number; total: number }> {
   const config = getPushConfig();
-  if (!config.habilitado) return { entregues: 0, total: 0 };
+  const apns = getAPNsConfig();
+  // Web e app são canais independentes: ter só um configurado ainda permite
+  // entregar para os aparelhos daquele lado.
+  if (!config.habilitado && !apns.habilitado) return { entregues: 0, total: 0 };
 
   // De-duplicação: se já mandamos este assunto para esta pessoa, não repete.
   // O índice único no banco é a rede de segurança; esta checagem evita o
@@ -56,9 +60,6 @@ export async function enviarPara(
     return { entregues: 0, total: 0 };
   }
 
-  const webpush = (await import("web-push")).default;
-  webpush.setVapidDetails(config.subject, config.publicKey!, config.privateKey!);
-
   const payload = JSON.stringify({
     titulo: notif.titulo,
     corpo: notif.corpo,
@@ -69,11 +70,30 @@ export async function enviarPara(
   let entregues = 0;
   const mortas: string[] = [];
 
+  // O import do web-push só acontece se houver aparelho web para atender —
+  // numa base só de app, carregar a biblioteca seria desperdício em toda
+  // execução do cron.
+  const temWeb = inscricoes.some((s) => s.tipo !== "apns");
+  const webpush = temWeb && config.habilitado ? (await import("web-push")).default : null;
+  if (webpush) {
+    webpush.setVapidDetails(config.subject, config.publicKey!, config.privateKey!);
+  }
+
   await Promise.all(
     inscricoes.map(async (s) => {
+      // App das lojas: o iOS entrega, e o token do aparelho está em endpoint.
+      if (s.tipo === "apns") {
+        if (!apns.habilitado) return;
+        const r = await enviarAPNs(s.endpoint, notif);
+        if (r.ok) entregues++;
+        else if (r.morto) mortas.push(s.id);
+        return;
+      }
+
+      if (!webpush) return;
       try {
         await webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh!, auth: s.auth! } },
           payload,
           { TTL: 60 * 60 * 24 }, // vale por 1 dia; depois disso a mensagem perdeu a hora
         );

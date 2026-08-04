@@ -563,32 +563,35 @@ export type Database = {
       }
       push_subscriptions: {
         Row: {
-          auth: string
+          auth: string | null
           created_at: string
           endpoint: string
           id: string
           invalida_em: string | null
-          p256dh: string
+          p256dh: string | null
+          tipo: Database["public"]["Enums"]["push_tipo"]
           user_agent: string | null
           user_id: string
         }
         Insert: {
-          auth: string
+          auth?: string | null
           created_at?: string
           endpoint: string
           id?: string
           invalida_em?: string | null
-          p256dh: string
+          p256dh?: string | null
+          tipo?: Database["public"]["Enums"]["push_tipo"]
           user_agent?: string | null
           user_id: string
         }
         Update: {
-          auth?: string
+          auth?: string | null
           created_at?: string
           endpoint?: string
           id?: string
           invalida_em?: string | null
-          p256dh?: string
+          p256dh?: string | null
+          tipo?: Database["public"]["Enums"]["push_tipo"]
           user_agent?: string | null
           user_id?: string
         }
@@ -1044,6 +1047,7 @@ export type Database = {
           endpoint: string
           id: string
           p256dh: string
+          tipo: Database["public"]["Enums"]["push_tipo"]
         }[]
       }
       ranking: {
@@ -1113,6 +1117,7 @@ export type Database = {
         | "subiu_nivel"
         | "ranking_semanal"
       point_reason: "quiz" | "caso_questao" | "caso_bonus" | "atlas"
+      push_tipo: "web" | "apns"
       quiz_level: "basico" | "avancado"
       support_status: "aberto" | "em_andamento" | "resolvido"
       user_role: "user" | "admin"
@@ -1255,6 +1260,7 @@ export const Constants = {
         "ranking_semanal",
       ],
       point_reason: ["quiz", "caso_questao", "caso_bonus", "atlas"],
+      push_tipo: ["web", "apns"],
       quiz_level: ["basico", "avancado"],
       support_status: ["aberto", "em_andamento", "resolvido"],
       user_role: ["user", "admin"],

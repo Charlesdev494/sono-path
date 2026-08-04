@@ -44,6 +44,7 @@ import {
 } from "@/lib/data/progress";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PreferenciasNotif } from "@/components/PreferenciasNotif";
+import { NotificacoesNativas } from "@/components/NotificacoesNativas";
 
 export const Route = createFileRoute("/_app/perfil")({
   head: () => ({
@@ -211,7 +212,9 @@ function PerfilPage() {
       </Card>
 
       {/* Some por completo se o push não estiver ligado no servidor. */}
+      {/* Um dos dois aparece: Web Push na web, APNs no app. */}
       <PreferenciasNotif profile={profile} />
+      <NotificacoesNativas />
 
       <Card className="p-4">
         <h2 className="mb-3 font-display font-semibold">Privacidade</h2>

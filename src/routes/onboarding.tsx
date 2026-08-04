@@ -17,6 +17,7 @@ import { useAuth, useProfile } from "@/lib/auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { SeletorCidade } from "@/components/SeletorCidade";
+import { EH_NATIVO } from "@/lib/nativo";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -91,6 +92,24 @@ function Onboarding() {
     }
 
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
+
+    // Pede a permissão de notificação aqui, e não na primeira abertura: o iOS
+    // só mostra o diálogo UMA vez por instalação, e quem ainda não sabe o que
+    // o app faz tende a recusar — depois disso, só nos Ajustes do sistema.
+    // Neste ponto a pessoa acabou de escolher especialidade e tempo de
+    // formado; o pedido faz sentido para ela.
+    //
+    // Falhar aqui não pode travar o cadastro: quem recusa segue para a home
+    // normalmente e pode ligar depois no Perfil.
+    if (EH_NATIVO) {
+      try {
+        const { ativarPushNativo } = await import("@/lib/push/nativo");
+        await ativarPushNativo();
+      } catch {
+        /* segue o baile */
+      }
+    }
+
     navigate({ to: "/home" });
   };
 
