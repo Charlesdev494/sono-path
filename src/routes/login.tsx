@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/lib/auth";
+import { EH_NATIVO, MOSTRAR_LOGIN_GOOGLE } from "@/lib/nativo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,29 @@ function Login() {
 
   async function comProvedor(provider: "google" | "apple") {
     setErro(null);
+
+    // No app, o Apple entra pela folha nativa do iOS — não pelo fluxo de
+    // redirecionamento, que não fecha em capacitor://localhost e ainda
+    // apareceria como uma página de login dentro de uma webview.
+    if (EH_NATIVO && provider === "apple") {
+      setEnviando(true);
+      try {
+        const { entrarComAppleNativo } = await import("@/lib/auth-apple");
+        await entrarComAppleNativo();
+        // O redirecionamento para /home ou /onboarding é do guard de rota, que
+        // reage à sessão nova.
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // Cancelar na folha da Apple não é erro; é a pessoa mudando de ideia.
+        if (!/1001|cancel/i.test(msg)) {
+          setErro("Não foi possível entrar com a Apple. Tente de novo.");
+        }
+      } finally {
+        setEnviando(false);
+      }
+      return;
+    }
+
     const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -103,10 +127,21 @@ function Login() {
         </header>
 
         <div className="flex flex-col gap-2">
-          <Button variant="outline" onClick={() => comProvedor("google")} className="w-full">
-            Continuar com Google
-          </Button>
-          <Button variant="outline" onClick={() => comProvedor("apple")} className="w-full">
+          {/* O Google ainda não tem caminho nativo: dentro do app o fluxo de
+              redirecionamento não fecha. Botão que não funciona na tela de
+              login é rejeição na revisão, então some no app e continua na web
+              até o plugin dele entrar. */}
+          {MOSTRAR_LOGIN_GOOGLE && (
+            <Button variant="outline" onClick={() => comProvedor("google")} className="w-full">
+              Continuar com Google
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => comProvedor("apple")}
+            disabled={enviando}
+            className="w-full"
+          >
             Continuar com Apple
           </Button>
         </div>

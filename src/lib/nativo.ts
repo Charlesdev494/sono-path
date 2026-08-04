@@ -13,5 +13,10 @@ export const EH_NATIVO = Boolean(import.meta.env.VITE_NATIVE_API_URL);
 // - Web Push NÃO funciona dentro do WKWebView do iOS. O push nativo (APNs)
 //   entra numa próxima versão; até lá, esconder é melhor do que oferecer um
 //   botão que pede permissão e nunca entrega notificação nenhuma.
+// - O login com Google ainda não tem caminho nativo: o fluxo de
+//   redirecionamento não fecha em capacitor://localhost. Some no app até o
+//   plugin dele entrar; na web continua normal. O Apple já tem — vai pela
+//   folha nativa do iOS (ver lib/auth-apple.ts).
 export const MOSTRAR_INSTALAR_PWA = !EH_NATIVO;
 export const MOSTRAR_WEB_PUSH = !EH_NATIVO;
+export const MOSTRAR_LOGIN_GOOGLE = !EH_NATIVO;
