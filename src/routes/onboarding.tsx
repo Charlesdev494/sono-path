@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth, useProfile } from "@/lib/auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { SeletorCidade } from "@/components/SeletorCidade";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -59,8 +60,7 @@ function Onboarding() {
   }, [profile?.nome]);
 
   const total = 5;
-  const set = (k: keyof typeof data, v: string | boolean) =>
-    setData((d) => ({ ...d, [k]: v }));
+  const set = (k: keyof typeof data, v: string | boolean) => setData((d) => ({ ...d, [k]: v }));
 
   const next = () => setStep((s) => Math.min(total, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
@@ -97,7 +97,12 @@ function Onboarding() {
   const podeAvancar = () => {
     if (step === 0) return data.nome.trim().length > 1;
     if (step === 1) return !!data.especialidade;
-    if (step === 2) return data.cidade.trim().length > 1;
+    // "Cidade / UF": exige as duas partes. Só escolher o estado deixa a string
+    // como " / MG", que passaria por um teste de comprimento.
+    if (step === 2) {
+      const [cidade, uf] = data.cidade.split("/").map((p) => p.trim());
+      return Boolean(cidade && uf);
+    }
     if (step === 3) return !!data.tempoFormado;
     return true;
   };
@@ -133,15 +138,10 @@ function Onboarding() {
         {step === 1 && (
           <div className="space-y-4">
             <h1 className="text-2xl font-bold">Sua especialidade</h1>
-            <p className="text-muted-foreground">
-              Personalizamos o conteúdo conforme sua área.
-            </p>
+            <p className="text-muted-foreground">Personalizamos o conteúdo conforme sua área.</p>
             <div className="space-y-2">
               <Label>Especialidade</Label>
-              <Select
-                value={data.especialidade}
-                onValueChange={(v) => set("especialidade", v)}
-              >
+              <Select value={data.especialidade} onValueChange={(v) => set("especialidade", v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -174,40 +174,26 @@ function Onboarding() {
             <p className="text-muted-foreground">
               Para conectarmos você à comunidade local no futuro.
             </p>
-            <div className="space-y-2">
-              <Label>Cidade / UF</Label>
-              <Input
-                placeholder="Ex: Belo Horizonte / MG"
-                value={data.cidade}
-                onChange={(e) => set("cidade", e.target.value)}
-              />
-            </div>
+            <SeletorCidade valor={data.cidade} onChange={(v) => set("cidade", v)} />
           </div>
         )}
 
         {step === 3 && (
           <div className="space-y-4">
             <h1 className="text-2xl font-bold">Tempo de formado</h1>
-            <p className="text-muted-foreground">
-              Ajustamos a profundidade do conteúdo.
-            </p>
+            <p className="text-muted-foreground">Ajustamos a profundidade do conteúdo.</p>
             <div className="space-y-2">
               <Label>Anos de formado</Label>
-              <Select
-                value={data.tempoFormado}
-                onValueChange={(v) => set("tempoFormado", v)}
-              >
+              <Select value={data.tempoFormado} onValueChange={(v) => set("tempoFormado", v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["Menos de 2", "2 a 5", "6 a 10", "11 a 20", "Mais de 20"].map(
-                    (t) => (
-                      <SelectItem key={t} value={t}>
-                        {t} anos
-                      </SelectItem>
-                    ),
-                  )}
+                  {["Menos de 2", "2 a 5", "6 a 10", "11 a 20", "Mais de 20"].map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t} anos
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -222,22 +208,14 @@ function Onboarding() {
                 <p className="font-medium">Possui aparelho de ultrassom?</p>
                 <p className="text-xs text-muted-foreground">Próprio ou no serviço</p>
               </div>
-              <Switch
-                checked={data.temUS}
-                onCheckedChange={(v) => set("temUS", v)}
-              />
+              <Switch checked={data.temUS} onCheckedChange={(v) => set("temUS", v)} />
             </div>
             <div className="flex items-center justify-between rounded-xl border bg-card p-4">
               <div>
                 <p className="font-medium">Trabalha com dor?</p>
-                <p className="text-xs text-muted-foreground">
-                  Procedimentos / intervenções
-                </p>
+                <p className="text-xs text-muted-foreground">Procedimentos / intervenções</p>
               </div>
-              <Switch
-                checked={data.trabalhaDor}
-                onCheckedChange={(v) => set("trabalhaDor", v)}
-              />
+              <Switch checked={data.trabalhaDor} onCheckedChange={(v) => set("trabalhaDor", v)} />
             </div>
 
             <div className="rounded-xl bg-gradient-to-br from-primary to-primary-glow p-5 text-primary-foreground">

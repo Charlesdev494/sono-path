@@ -17,7 +17,8 @@
     "test:social": "node --env-file-if-exists=.env scripts/test-social.mjs",
     "icons": "node scripts/gen-icons.mjs",
     "test:push": "node --env-file-if-exists=.env scripts/test-push.mjs",
-    "assets:nativos": "node scripts/gen-assets-nativos.mjs"
+    "assets:nativos": "node scripts/gen-assets-nativos.mjs",
+    "municipios": "node scripts/gen-municipios.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",
